@@ -1,0 +1,29 @@
+# Initialize
+RewriteEngine On
+
+Options -Indexes
+
+# Restrict Git Access
+RewriteRule ^(\.git)/?$ /logout
+RewriteRule ^(\.git)/(.*)/?$ /logout
+
+# Standard Navigation
+RewriteRule ^(core|login|signup|help)/([^/]+)/([^/]+)/?$ /index.php?page=$1&section=$2&subsection=$3 [L]
+RewriteRule ^(core|login|signup|help)/([^/]+)/?$ /index.php?page=$1&section=$2 [L]
+RewriteRule ^(core|login|signup|help)/?$ /index.php?page=$1 [L]
+
+# Standard Processes
+RewriteRule ^(router)/?$ /route.php [QSA]
+RewriteRule ^(dologin)/?$ /parse/login.php [QSA]
+RewriteRule ^(dologout)/?$ /parse/logout.php [QSA]
+RewriteRule ^(dosignup)/?$ /parse/dosignup.php [QSA]
+RewriteRule ^(dorecovery)/?$ /parse/dorecovery.php [QSA]
+RewriteRule ^(dovalidate)/?$ /parse/dovalidate.php [QSA]
+RewriteRule ^(do2factor)/?$ /parse/do2factor.php [QSA]
+RewriteRule ^(error)/?$ /parse/error.php [QSA]
+
+# Standard Assets
+RewriteRule ^(assets)/(.*)/?$ /clientside/$2
+
+# Standard Access Restriction - TODO clean this up to redirect/block correctly
+RewriteRule ^(asset)/(core|account|help)/?$ /logout [QSA]

@@ -43,7 +43,7 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 <div class="header">
 	<div class="menuContainer">
 		<div class="logo">
-			<img class="xlink" data-url="https://milan.conoda.com/" src="/assets/images/logo-light.png" data-target="#content" width="82">
+			<img class="xlink" data-url="https://<?php echo $_SERVER['SERVER_NAME']; ?>/" src="/assets/images/logo-light.png" data-target="#content" width="82">
 		</div>
 	</div>
 	<div class="searchArea">
@@ -174,9 +174,19 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 <div id="content">
 
 </div>
-<div style="margin-top: -50px;">
+<div style="margin-top: -40px;">
 <?php 
-echo $_SERVER['HTTP_X_CONODA_INFRA'] .' @ ';
-echo $_SERVER['SERVER_ADDR'];
+if (trim($_SERVER['HTTP_X_CONODA_INFRA']) == "") {
+	$serv = "beta";
+} else {
+	$serv = $_SERVER['HTTP_X_CONODA_INFRA'];
+}
+if (trim($_SERVER['HOSTNAME']) == "") {
+	$host = $_SERVER['HTTP_HOST'];
+} else {
+	$host = $_SERVER['HOSTNAME'];
+}
+echo $serv .' @ ';
+echo $host 
 ?>
 </div>

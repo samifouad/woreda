@@ -174,7 +174,9 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 <div id="content">
 
 </div>
+<div style="margin-top: -50px;">
 <?php 
 echo $_SERVER['HTTP_X_CONODA_INFRA'] .' @ ';
-echo $_SERVER['REMOTE_ADDR'];
+echo $_SERVER['SERVER_ADDR'];
 ?>
+</div>

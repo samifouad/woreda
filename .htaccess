@@ -8,9 +8,9 @@ RewriteRule ^(\.git)/?$ /logout
 RewriteRule ^(\.git)/(.*)/?$ /logout
 
 # Standard Navigation
-RewriteRule ^(core|login|signup|help)/([^/]+)/([^/]+)/?$ /index.php?page=$1&section=$2&subsection=$3 [L]
-RewriteRule ^(core|login|signup|help)/([^/]+)/?$ /index.php?page=$1&section=$2 [L]
-RewriteRule ^(core|login|signup|help)/?$ /index.php?page=$1 [L]
+RewriteRule ^(core|login|signup|news|video|audio|groups|shop|events|mentions|help)/([^/]+)/([^/]+)/?$ /index.php?page=$1&section=$2&subsection=$3 [L]
+RewriteRule ^(core|login|signup|news|video|audio|groups|shop|events|mentions|help)/([^/]+)/?$ /index.php?page=$1&section=$2 [L]
+RewriteRule ^(core|login|signup|news|video|audio|groups|shop|events|mentions|help)/?$ /index.php?page=$1 [L]
 
 # Standard Processes
 RewriteRule ^(router)/?$ /route.php [QSA]

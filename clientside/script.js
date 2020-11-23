@@ -502,8 +502,8 @@ $(document).ready(function()
 			var pathArray = e.state.url.split('/');
 			var pathOldArray = e.state.prev.split('/');
 
-			if (pathArray[1] == "") { pathArray[1] = "users"; }
-			if (pathArray[2] == "") { pathArray[2] = "overview"; }
+			if (pathArray[1] == "") { pathArray[1] = "news"; }
+			if (pathArray[2] == "") { pathArray[2] = "home"; }
 
 			// check to see if section changed
 			if (pathArray[1] == pathOldArray[1])
@@ -514,16 +514,16 @@ $(document).ready(function()
 			}
 		} else {
 			//console.log("defaulting");
-			setCurrentPage('/users/overview', "#content");
+			setCurrentPage('/news/home', "#content");
 		}
   };
 
 	// url routing for initial load of page
 	var pathArray = window.location.pathname.split('/');
 
-	if (pathArray[1] == "") { pathArray[1] = "users"; }
+	if (pathArray[1] == "") { pathArray[1] = "news"; }
 
-	if (pathArray[2] == "" || !pathArray[2]) { pathArray[2] = "overview"; }
+	if (pathArray[2] == "" || !pathArray[2]) { pathArray[2] = "home"; }
 
 	// content at the first load of site
 	setCurrentPage('/'+ pathArray[1] +'/'+ pathArray[2], "#content");

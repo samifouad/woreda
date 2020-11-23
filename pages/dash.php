@@ -41,11 +41,6 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 }
 ?>
 <div class="header">
-	<div class="menuContainer">
-		<div class="logo">
-			<img class="xlink" data-url="https://<?php echo $_SERVER['SERVER_NAME']; ?>/" src="/assets/images/logo-light.png" data-target="#content" width="82">
-		</div>
-	</div>
 	<div class="searchArea">
 			 <div class="searchContainer">
 				 <div class="search-text-button" type="button" id="searchIconButton">
@@ -60,7 +55,7 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 			 </div>
 			 <div class="searchResults" style="display: none;"></div>
 	</div>
-	<div class="auxTopMenuContainer" style="float: right; margin-right: 25px; margin-top: 15px;">
+	<div class="auxTopMenuContainer" style="float: right; margin-right: 20px; margin-top: 15px;">
 		<div class="auxContainer">
 			<div class="auxMenu-text-button" type="button" id="auxIconButton">
 				<i class="auxMenu-text-button-icon fa fa-bars" aria-hidden="true"></i>
@@ -146,25 +141,25 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 	</div>
 	<div class="menuContainer2" >
 		<div class="menuOptions">
-			<div class="topMenu clink sqButton-inactive" data-url="/apps" data-target="#content">
+			<div class="topMenu clink sqButton-inactive" data-url="/feed" data-target="#content">
+				<strong><i class="fa fa-angle-double-down" aria-hidden="true"></i></strong>
+			</div>
+			<div class="topMenu clink sqButton-inactive" data-url="/mentions" data-target="#content">
 				<strong><i class="fa fa-at" aria-hidden="true"></i></strong>
 			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/ui" data-target="#content">
-				<i class="fa fa-calendar-o" aria-hidden="true"></i>
+			<div class="topMenu clink sqButton-inactive" data-url="/institutions" data-target="#content">
+				<i class="fa fa-bank" aria-hidden="true"></i>
 			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/ui" data-target="#content">
-				<i class="fa fa-shopping-cart" aria-hidden="true"></i>
+			<div class="topMenu clink sqButton-inactive" data-url="/people" data-target="#content">
+				<i class="fa fa-user-circle-o" aria-hidden="true"></i>
 			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/rest" data-target="#content">
-				<i class="fa fa-users" aria-hidden="true"></i>
+			<div class="topMenu clink sqButton-inactive" data-url="/highlights" data-target="#content">
+				<i class="fa fa-bolt" aria-hidden="true"></i>
 			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/rest" data-target="#content">
-				<i class="fa fa-headphones" aria-hidden="true"></i>
+			<div class="topMenu clink sqButton-inactive" data-url="/topics" data-target="#content">
+				<i class="fa fa-hashtag" aria-hidden="true"></i>
 			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/ui" data-target="#content">
-				<i class="fa fa-video-camera" aria-hidden="true"></i>
-			</div>
-			<div class="topMenu clink sqButton-active" data-url="/users" data-target="#content">
+			<div class="topMenu clink sqButton-active" data-url="/news" data-target="#content">
 				<i class="fa fa-newspaper-o" aria-hidden="true"></i>
 			</div>
 		</div>
@@ -173,20 +168,4 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 <div class="headerBlur blurMagic"></div>
 <div id="content">
 
-</div>
-<div style="margin-top: -40px;">
-<?php 
-if (trim($_SERVER['HTTP_X_CONODA_INFRA']) == "") {
-	$serv = "beta";
-} else {
-	$serv = $_SERVER['HTTP_X_CONODA_INFRA'];
-}
-if (trim($_SERVER['HOSTNAME']) == "") {
-	$host = $_SERVER['HTTP_HOST'];
-} else {
-	$host = $_SERVER['HOSTNAME'];
-}
-echo $serv .' @ ';
-echo $host 
-?>
 </div>

@@ -42,18 +42,25 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 ?>
 <div class="header">
 	<div class="searchArea">
-			 <div class="searchContainer">
-				 <div class="search-text-button" type="button" id="searchIconButton">
-					 <i class="search-text-button-icon fa fa-search" aria-hidden="true"></i>
-				 </div>
-				 <div type="text" class="search" contenteditable="true">
+		<div class="searchContainer">
+			<div class="search-text-button" type="button" id="searchIconButton">
+				<i class="search-text-button-icon fa fa-search" aria-hidden="true"></i>
+			</div>
+			<div type="text" class="search" contenteditable="true">
 
-				 </div>
-				 <button class="search-close-button" style="top: 0px;margin-left: 230px;" type="button" id="voice">
-					 <i class="fa fa-times" aria-hidden="true"></i>
-				 </button>
-			 </div>
-			 <div class="searchResults" style="display: none;"></div>
+			</div>
+			<button class="search-close-button" style="top: 0px;margin-left: 230px;" type="button" id="voice">
+				<i class="fa fa-times" aria-hidden="true"></i>
+			</button>
+		</div>
+		<div class="searchResults" style="display: none;"></div>
+
+		<div class="voiceContainer">
+			<div class="search-text-button" type="button" id="searchIconButton">
+				<i class="search-text-button-icon fa fa-search" aria-hidden="true"></i>
+			</div>
+		</div>
+		<div class="searchResults" style="display: none;"></div>
 	</div>
 	<div class="auxTopMenuContainer" style="float: right; margin-right: 20px; margin-top: 15px;">
 		<div class="auxContainer">
@@ -147,17 +154,17 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 			<div class="topMenu clink sqButton-inactive" data-url="/mentions" data-target="#content">
 				<strong><i class="fa fa-at" aria-hidden="true"></i></strong>
 			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/institutions" data-target="#content">
-				<i class="fa fa-bank" aria-hidden="true"></i>
+			<div class="topMenu clink sqButton-inactive" data-url="/groups" data-target="#content">
+				<strong><i class="fa fa-users" aria-hidden="true"></i></strong>
+			</div>
+			<div class="topMenu clink sqButton-inactive" data-url="/shop" data-target="#content">
+				<strong><i class="fa fa-shopping-cart" aria-hidden="true"></i></strong>
+			</div>
+			<div class="topMenu clink sqButton-inactive" data-url="/places" data-target="#content">
+				<strong><i class="fa fa-map-marker" aria-hidden="true"></i></strong>
 			</div>
 			<div class="topMenu clink sqButton-inactive" data-url="/people" data-target="#content">
-				<i class="fa fa-user-circle-o" aria-hidden="true"></i>
-			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/highlights" data-target="#content">
-				<i class="fa fa-bolt" aria-hidden="true"></i>
-			</div>
-			<div class="topMenu clink sqButton-inactive" data-url="/topics" data-target="#content">
-				<i class="fa fa-hashtag" aria-hidden="true"></i>
+				<i class="fa fa-video-camera" aria-hidden="true"></i>
 			</div>
 			<div class="topMenu clink sqButton-active" data-url="/news" data-target="#content">
 				<i class="fa fa-newspaper-o" aria-hidden="true"></i>

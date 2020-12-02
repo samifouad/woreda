@@ -400,8 +400,15 @@ body {
   padding: 5px;
 }
 
+.voiceContainer {
+    position: relative;
+    float: left;
+    z-index: 3;
+  }
+
 .searchContainer {
   position: relative;
+  float: left;
   z-index: 3;
 }
 
@@ -410,15 +417,15 @@ body {
   width: 300px;
   height: 70px;
   margin-left: 25px;
-  top: 15px;
+  top: 25px;
   z-index: 5;
 }
-
+ 
 .search {
   width: 5px;
   height: 38px;
   line-height: 38px;
-  margin-top: 10px;
+  margin-top: 0px;
   padding-left: 35px;
   font-size: 18px;
   color: #888;
@@ -438,7 +445,7 @@ body {
   padding: 8px;
   padding-left: 12px;
     padding-right: 12px;
-  border-radius: 5px;
+  border-radius: 10px;
   border: 1px solid #000;
   font-size: 20px;
   border: 0px solid transparent;

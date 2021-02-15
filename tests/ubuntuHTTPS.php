@@ -1,43 +1,30 @@
 <?php
-require ($_SERVER['DOCUMENT_ROOT'] ."/engine.php");
+function compareArray($array1, $array2) {
+    $a1 = array_unique($array1);
+    $a2 = array_unique($array2);
 
-// initializing Cloud HTTPS API for Ubuntu servers
-$uApi = new UbuntuHTTPS();
+    $layer1 = array();
+    $layer2 = array();
 
-// making call
-$uApi->Exec("uptime");
-//$uApi->Exec("which", "apache2"); // apache2 location
-//$uApi->Exec("free", "-m"); // memory usage
-//$uApi->Exec("df", "-h"); // disk space usage
-//$uApi->Exec("which", "apache2");
-//$uApi->Exec("uname", "-a"); // prints all system information
-//$uApi->Exec("date", "-s STRING"); // sets date based on STRING, need to research TODO
-//$uApi->Exec("ls", "-hs"); // list directory, h = human readable, s = sizes
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
-//$uApi->Exec("");
+    foreach ($a1 as $val) {
+        if (in_array($val, $a2)) {
+            $layer1[] = $val;
+        }
+    }
 
-// print results
-echo '<pre><strong>Sent Endpoint/Data:</strong>';
-    echo '<br><br>';
-    print_r($uApi->jsonData);
-echo '<br><br><strong>Sent Header:</strong><br><br>';
-    print_r($uApi->apiResponseOut);
-    echo '<br><br>';
-echo '<strong>Response Header:</strong><br><br>';
-    print_r($uApi->apiResponseHeader);
-    echo '<br><br>';
-echo '<strong>Response Code:</strong><br><br>';
-    print_r($uApi->apiResponseCode);
-    echo '<br><br>';
-echo '<strong>Response:</strong><br><br>';
-    print(trim($uApi->apiResponse['response']));
+    foreach ($a2 as $val) {
+        if (in_array($val, $a1)) {
+            $layer2[] = $val;
+        }
+    }
+    return array_unique(array_merge($layer1, $layer2));
+}
+
+$first = array('dog', 'cat', 'cat', 'bike', 'dog');
+$second = array('marshmellow', 'cat', 'rover', 'billion');
+$third = array('cupcakes', 'cat', 'bike', 'cat');
+
+echo '<pre>';
+    var_dump (compareArray($second, $third));
 echo '</pre>';
 ?>

@@ -58,6 +58,15 @@ if ($user->signedIn == TRUE)
 } else {
 
 	// universal site header
-	header("Location: https://id.conoda.com?r=http://beta.conoda.com");
+	echo file_get_contents("pages/static.signedin.header.html");
+
+  	// account home
+	include ("pages/splashin.php");
+
+	// universal site footer
+	echo file_get_contents("pages/static.signedin.footer.html");
+
+	// universal site header
+	//header("Location: https://id.conoda.com?r=http://beta.conoda.com");
 }
 ?>

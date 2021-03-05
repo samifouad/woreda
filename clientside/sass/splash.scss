@@ -1,7 +1,207 @@
+@import "../bootstrap/scss/bootstrap";
+
 $font-stack:    Helvetica, sans-serif;
-$primary-color: #000;
+$primaryFgColor: #FFF;
+$primaryBgColor: #f6ece2;
+$accentBgColor: #f33926;
+$darkBgColor: #2d2d2d;
 
 body {
   font: 100% $font-stack;
-  color: $primary-color;
+  color: $primaryFgColor;
+  background-color: $primaryBgColor;
+} 
+
+
+.fullSplash {
+  @include make-col-ready;
+  @include media-breakpoint-up(xs) {
+    @include make-col(12);
+  }
+  @include media-breakpoint-up(sm) {
+    @include make-col(12);
+  }
+  @include media-breakpoint-up(md) {
+    @include make-col(12);
+  }
+  @include media-breakpoint-up(lg) {
+    @include make-col(12);
+  }
+
+  min-height: 90vh;
+  text-align: center;
+  @media (min-width: 544px) {  
+    h5 {font-size:1.5rem;} /*1rem = 16px*/
+  }
+}
+
+.halfSplash {
+  @include make-col-ready;
+  @include media-breakpoint-up(xs) {
+    @include make-col(12);
+  }
+  @include media-breakpoint-up(sm) {
+    @include make-col(6); 
+  }
+  @include media-breakpoint-up(md) {
+    @include make-col(6);
+  }
+  @include media-breakpoint-up(lg) {
+    @include make-col(6);
+  }
+
+  min-height: 90vh;
+  text-align: center;
+
+  @include font-size(1.5rem);
+}
+
+.halfSplashAlt {
+  @include make-col-ready;
+  @include media-breakpoint-up(xs) {
+    @include make-col(12);
+  }
+  @include media-breakpoint-up(sm) {
+    @include make-col(12); 
+  }
+  @include media-breakpoint-up(md) {
+    @include make-col(6);
+  }
+  @include media-breakpoint-up(lg) {
+    @include make-col(6);
+  }
+
+  min-height: 90vh;
+  text-align: center;
+
+  @include font-size(1.5rem);
+}
+
+// grid bg colours
+.bgCamel {
+  background-color: $primaryBgColor;
+}
+
+.bgRed {
+  background-color: $accentBgColor;
+}
+
+.bgDarkGray {
+  background-color: $darkBgColor;
+}
+
+.bgWhite {
+  background-color: #FFF;
+}
+
+.bgBlack {
+  background-color: #000;
+} 
+
+.highlightDark {
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 5px;
+}
+
+.highlightLight {
+  padding: 10px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 5px;
+}
+
+.hform {
+  width: 50%;
+  float: left;
+  height: 90vh; 
+  background-color: #f6ece2;
+}
+
+.hformStyle {
+  width: 50%;
+  min-width: 320px;
+  margin-top: 20%;
+  padding: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 10px;
+  border: 1px solid #efefef;
+  background-color: #FFF;
+  color: #000;
+  -webkit-box-shadow: 6px 7px 5px -8px rgba(0,0,0,0.50);
+  -moz-box-shadow: 6px 7px 5px -8px rgba(0,0,0,0.50);
+  box-shadow: 6px 7px 5px -8px rgba(0,0,0,0.50);
+}
+
+.hinputField {
+  width: 250px;
+  font-size: 18px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #dcdcdc;
+}
+
+.hformButton {
+  width: 80%;
+  font-size: 22px;
+  margin-top: 10px;
+  margin-bottom: 0px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #fff;
+  background: #f33926;
+  color: white; 
+}
+
+.hformButtonMobile {
+  width: 80%;
+  font-size: 22px;
+  margin-top: 10px;
+  margin-bottom: 0px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #000;
+  background: #FFF;
+  color: white;
+}
+
+.hSpacer {
+  background-color: #EFEFEF;
+  border: none;
+  box-sizing: unset;
+  opacity: 1;
+  margin-top: 20px;
+  margin-bottom: 20px; 
+}
+
+.modal-title {
+  color: #000;
+}
+
+.modalNoBorderBottom {
+  border-bottom: none;
+}
+
+.modalNoBorderTop {
+  border-top: none; 
+}
+
+.buttonAction {
+  user-select: none; /* supported by Chrome and Opera */
+ -webkit-user-select: none; /* Safari */
+ -khtml-user-select: none; /* Konqueror HTML */
+ -moz-user-select: none; /* Firefox */
+ -ms-user-select: none; /* Internet Explorer/Edge */
+ outline: none;
+ cursor: pointer;
+ border: none;
+}
+
+.buttonAction:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+  border-color: unset;
 }

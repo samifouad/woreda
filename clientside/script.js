@@ -40,6 +40,13 @@ function initialize() {
 
 	AOS.refresh();
 
+    $(".signUpButton").unbind('click');
+    $(".signUpButton").on('click', function(e) {
+       // e.preventDefault();//
+        $("#signUpModal").modal("toggle");
+        console.log("button clicked");
+    });
+
 	// internal link
 	$(".clink").unbind('click');
 	$(".clink").on('click', function() {
@@ -303,6 +310,14 @@ function changeAuxMenuPage (page, action) {
 
 $(document).ready(function()
 {
+    // internal link
+    $(".signUpButton").unbind('click');
+    $(".signUpButton").on('click', function(e) {
+       // e.preventDefault();//
+        $("#signUpModal").modal("toggle");
+        console.log("button clicked");
+    });
+
 	// close open dialog when clicks outside of it occur
 	$(document).mouseup(function(e)
 	{

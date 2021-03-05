@@ -122,7 +122,7 @@ if ( !empty ( $_COOKIE[$cookie] ) )
 						<div class="auxContent-settingsView-icon">
 							<i class="fa fa-sign-out" aria-hidden="true"></i>
 						</div>
-						<div class="auxContent-settingsView-title xlink" data-url="https://milan.conoda.com/dologout">
+						<div class="auxContent-settingsView-title xlink" data-url="https://id.conoda.com/logout?r=http://beta.conoda.com">
 							Sign Out
 						</div>
 					</div>

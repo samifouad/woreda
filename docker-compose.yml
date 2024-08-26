@@ -1,0 +1,23 @@
+services:
+  site:
+    image: nginx:latest
+    ports:
+      - '8000:80'
+    environment:
+      - SUPABASE_ID=${SUPABASE_ID}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_API_KEY=${SUPABASE_API_KEY}
+    volumes:
+      - ./src:/var/www/html
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - php-fpm
+
+  php-fpm:
+    image: php:8-fpm
+    environment:
+      - SUPABASE_ID=${SUPABASE_ID}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_API_KEY=${SUPABASE_API_KEY}
+    volumes:
+      - ./src:/var/www/html

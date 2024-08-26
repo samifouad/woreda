@@ -1,1 +1,0 @@
-friendship validator

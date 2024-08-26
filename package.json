@@ -1,0 +1,9 @@
+{
+  "name": "woreda",
+  "scripts": {
+    "tw": "npx tailwindcss -i ./src/clientside/input.css -o ./src/clientside/tw.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.10"
+  }
+}

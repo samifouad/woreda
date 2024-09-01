@@ -42,29 +42,15 @@ require_once ("modules/core/includes/class.UbuntuHTTP.php"); // Ubuntu HTTP API
 */
 
 class Woreda {
-    // database connecion details
-    protected $dbHost = "localhost";
-    protected $dbUser = "root";
-    protected $dbPass = "a508f4b868af2293ed7c48ff0bd2a41e7e789fb438473391";
-    protected $dbName = "conoda";
+  public $Address = "http://localhost:8000";
+  public $mainAddress = "http://localhost:8000";
 
-    public $Address = "http://localhost:8000";
-    public $mainAddress = "http://localhost:8000";
+  public $cookieAuth = "woredaAuth";
+  public $cookieRefresh = "woredaRefresh";
 
-    public $cookieAuth = "woredaAuth";
+  public $title = "woreda";
 
-		public $title = "woreda";
-
-    public $modules = array();
-
-public $publicKey = <<<EOD
------BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC8kGa1pSjbSYZVebtTRBLxBz5H
-4i2p/llLCrEeQhta5kaQu/RnvuER4W8oDH3+3iuIYW4VQAzyqFpwuzjkDI+17t5t
-0tyazyZ8JXw+KgXTxldMPEL95+qVhgXvwtihXC1c5oGbRlEDvDF6Sa53rcFVsYJ4
-ehde/zUxo6UvS7UrBQIDAQAB
------END PUBLIC KEY-----
-EOD;
+  public $modules = array();
 
   function __construct() {
     // populate list of modules

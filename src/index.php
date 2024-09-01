@@ -14,7 +14,7 @@ if (!empty($_COOKIE[$cookie]))
 
     try {
         
-		$decoded = $jot->decode($cookieJWT, $site->publicKey);
+		$decoded = $jot->decode($cookieJWT, $_ENV['SUPABASE_HMAC']);
 
     } catch (Exception $e) {
         $user->signedIn = FALSE;

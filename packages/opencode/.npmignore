@@ -1,0 +1,35 @@
+# Development files
+src/
+test/
+script/
+*.test.ts
+*.spec.ts
+tsconfig.json
+.eslintrc*
+.prettierrc*
+
+# Build artifacts (except dist)
+*.log
+*.tmp
+.DS_Store
+.cache/
+
+# Git
+.git/
+.github/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CI/CD
+.travis.yml
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Docs that don't need to be in package
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md

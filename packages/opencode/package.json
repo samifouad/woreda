@@ -2,8 +2,29 @@
   "$schema": "https://json.schemastore.org/package.json",
   "version": "0.1.0",
   "name": "woreda",
+  "description": "Ollama-first AI coding agent for the terminal",
   "type": "module",
-  "private": true,
+  "author": "Sami Fouad",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samifouad/woreda.git"
+  },
+  "homepage": "https://github.com/samifouad/woreda",
+  "bugs": {
+    "url": "https://github.com/samifouad/woreda/issues"
+  },
+  "keywords": [
+    "ai",
+    "ollama",
+    "coding-agent",
+    "terminal",
+    "tui",
+    "local-ai",
+    "code-assistant",
+    "agent",
+    "mcp"
+  ],
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "test": "bun test",

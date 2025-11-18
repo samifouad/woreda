@@ -38,15 +38,17 @@ We target **Ollama models with tool support** - specifically optimized for codin
 ### Install Woreda
 
 ```bash
-# From source (for now)
+# From npm (recommended)
+npm install -g woreda
+# or
+bun install -g woreda
+
+# From source
 git clone https://github.com/samifouad/woreda.git
 cd woreda
 bun install
 bun run build
 bun link
-
-# Use it
-woreda spawn
 ```
 
 ---

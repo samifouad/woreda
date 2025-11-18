@@ -7,29 +7,19 @@ import { Instance } from "../project/instance"
 import path from "path"
 import os from "os"
 
-import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
-import PROMPT_ANTHROPIC_WITHOUT_TODO from "./prompt/qwen.txt"
-import PROMPT_POLARIS from "./prompt/polaris.txt"
-import PROMPT_BEAST from "./prompt/beast.txt"
-import PROMPT_GEMINI from "./prompt/gemini.txt"
-import PROMPT_ANTHROPIC_SPOOF from "./prompt/anthropic_spoof.txt"
+import PROMPT_DEFAULT from "./prompt/qwen.txt"
 import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
-import PROMPT_CODEX from "./prompt/codex.txt"
 
 export namespace SystemPrompt {
-  export function header(providerID: string) {
-    if (providerID.includes("anthropic")) return [PROMPT_ANTHROPIC_SPOOF.trim()]
+  export function header(_providerID: string) {
+    // Ollama doesn't need special headers
     return []
   }
 
-  export function provider(modelID: string) {
-    if (modelID.includes("gpt-5")) return [PROMPT_CODEX]
-    if (modelID.includes("gpt-") || modelID.includes("o1") || modelID.includes("o3")) return [PROMPT_BEAST]
-    if (modelID.includes("gemini-")) return [PROMPT_GEMINI]
-    if (modelID.includes("claude")) return [PROMPT_ANTHROPIC]
-    if (modelID.includes("polaris-alpha")) return [PROMPT_POLARIS]
-    return [PROMPT_ANTHROPIC_WITHOUT_TODO]
+  export function provider(_modelID: string) {
+    // Use the same optimized prompt for all local models
+    return [PROMPT_DEFAULT]
   }
 
   export async function environment() {
@@ -116,21 +106,11 @@ export namespace SystemPrompt {
     return Promise.all(found).then((result) => result.filter(Boolean))
   }
 
-  export function summarize(providerID: string) {
-    switch (providerID) {
-      case "anthropic":
-        return [PROMPT_ANTHROPIC_SPOOF.trim(), PROMPT_SUMMARIZE]
-      default:
-        return [PROMPT_SUMMARIZE]
-    }
+  export function summarize(_providerID: string) {
+    return [PROMPT_SUMMARIZE]
   }
 
-  export function title(providerID: string) {
-    switch (providerID) {
-      case "anthropic":
-        return [PROMPT_ANTHROPIC_SPOOF.trim(), PROMPT_TITLE]
-      default:
-        return [PROMPT_TITLE]
-    }
+  export function title(_providerID: string) {
+    return [PROMPT_TITLE]
   }
 }

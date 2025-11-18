@@ -1395,14 +1395,7 @@ export namespace SessionPrompt {
       ...ProviderTransform.options(small.providerID, small.modelID, small.npm ?? "", input.session.id),
       ...small.info.options,
     }
-    if (small.providerID === "openai" || small.modelID.includes("gpt-5")) {
-      options["reasoningEffort"] = "minimal"
-    }
-    if (small.providerID === "google") {
-      options["thinkingConfig"] = {
-        thinkingBudget: 0,
-      }
-    }
+    // Ollama models don't need special reasoning budget settings
     await generateText({
       maxOutputTokens: small.info.reasoning ? 1500 : 20,
       providerOptions: ProviderTransform.providerOptions(small.npm, small.providerID, options),

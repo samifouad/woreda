@@ -7,6 +7,7 @@ import { AuthCommand } from "./cli/cmd/auth"
 import { AgentCommand } from "./cli/cmd/agent"
 import { UpgradeCommand } from "./cli/cmd/upgrade"
 import { ModelsCommand } from "./cli/cmd/models"
+import { OllamaCommand } from "./cli/cmd/ollama"
 import { UI } from "./cli/ui"
 import { Installation } from "./installation"
 import { NamedError } from "./util/error"
@@ -82,6 +83,7 @@ const cli = yargs(hideBin(process.argv))
   .command(GenerateCommand)
   .command(DebugCommand)
   .command(AuthCommand)
+  .command(OllamaCommand)
   .command(AgentCommand)
   .command(UpgradeCommand)
   .command(ServeCommand)

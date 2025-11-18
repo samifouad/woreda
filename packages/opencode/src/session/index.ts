@@ -377,22 +377,14 @@ export namespace Session {
       metadata: z.custom<ProviderMetadata>().optional(),
     }),
     (input) => {
-      const cachedInputTokens = input.usage.cachedInputTokens ?? 0
-      const excludesCachedTokens = !!(input.metadata?.["anthropic"] || input.metadata?.["bedrock"])
-      const adjustedInputTokens = excludesCachedTokens
-        ? (input.usage.inputTokens ?? 0)
-        : (input.usage.inputTokens ?? 0) - cachedInputTokens
-
+      // Ollama doesn't support prompt caching, so token counting is simple
       const tokens = {
-        input: adjustedInputTokens,
+        input: input.usage.inputTokens ?? 0,
         output: input.usage.outputTokens ?? 0,
         reasoning: input.usage?.reasoningTokens ?? 0,
         cache: {
-          write: (input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
-            // @ts-expect-error
-            input.metadata?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
-            0) as number,
-          read: cachedInputTokens,
+          write: 0,
+          read: 0,
         },
       }
 

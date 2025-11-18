@@ -1,101 +1,264 @@
-<p align="center">
-  <a href="https://opencode.ai">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="OpenCode logo">
-    </picture>
-  </a>
-</p>
-<p align="center">The AI coding agent built for the terminal.</p>
-<p align="center">
-  <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
-  <a href="https://github.com/sst/opencode/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/sst/opencode/publish.yml?style=flat-square&branch=dev" /></a>
-</p>
+# Woreda
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+**The Ollama-first AI coding agent built for the terminal.**
+
+> Forked from OpenCode to focus exclusively on local Ollama models with tool support.
+
+[![Build status](https://img.shields.io/github/actions/workflow/status/samifouad/woreda/test.yml?style=flat-square&branch=main)](https://github.com/samifouad/woreda/actions)
 
 ---
 
-### Installation
+## Philosophy
+
+Woreda is **100% local-first**. No cloud APIs, no billing, no authentication. Just you, your powerful machine, and open-source models running locally via Ollama.
+
+**Why local-only?**
+- **Privacy**: Your code never leaves your machine
+- **Cost**: $0.00 per token, forever
+- **Speed**: No network latency, just raw local inference
+- **Control**: Full context window management, no provider limits
+- **Focus**: Built for code, not chat
+
+We target **Ollama models with tool support** - specifically optimized for coding tasks like qwen2.5-coder, deepseek-coder-v2, and llama3.2.
+
+---
+
+## Installation
+
+### Prerequisites
+
+1. **Install Ollama**: https://ollama.com/download
+2. **Pull a tool-capable model**:
+   ```bash
+   ollama pull qwen2.5-coder        # Recommended: Best for code
+   ollama pull deepseek-coder-v2    # Alternative: Great for reasoning
+   ollama pull llama3.2             # Alternative: Fast and capable
+   ```
+
+### Install Woreda
 
 ```bash
-# YOLO
-curl -fsSL https://opencode.ai/install | bash
+# From source (for now)
+git clone https://github.com/samifouad/woreda.git
+cd woreda
+bun install
+bun run build
+bun link
 
-# Package managers
-npm i -g opencode-ai@latest        # or bun/pnpm/yarn
-scoop bucket add extras; scoop install extras/opencode  # Windows
-choco install opencode             # Windows
-brew install opencode              # macOS and Linux
-paru -S opencode-bin               # Arch Linux
-mise use --pin -g ubi:sst/opencode # Any OS
-nix run nixpkgs#opencode           # or github:sst/opencode for latest dev branch
+# Use it
+woreda spawn
 ```
 
-> [!TIP]
-> Remove versions older than 0.1.x before installing.
+---
 
-#### Installation Directory
+## Supported Models
 
-The install script respects the following priority order for the installation path:
+Woreda **only shows Ollama models with tool support**. These models can execute bash commands, edit files, and use the full agent toolkit.
 
-1. `$OPENCODE_INSTALL_DIR` - Custom installation directory
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification compliant path
-3. `$HOME/bin` - Standard user binary directory (if exists or can be created)
-4. `$HOME/.opencode/bin` - Default fallback
+**Recommended:**
+- `qwen2.5-coder` - Best overall for code generation
+- `deepseek-coder-v2` - Excellent reasoning capabilities
+- `llama3.2` - Fast and lightweight (3B/1B variants available)
 
-```bash
-# Examples
-OPENCODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://opencode.ai/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
-```
+**Also supported:**
+- `llama3.1` - Strong general capabilities
+- `mistral-nemo` - Good balance of speed and capability
+- `command-r` - Cohere's code model
+- `firefunction-v2` - Fireworks' function-calling specialist
 
-### Agents
+### Model Requirements
 
-OpenCode includes two built-in agents you can switch between,
-you can switch between these using the `Tab` key.
+To appear in Woreda, a model must:
+1. Be available in your local Ollama instance
+2. Support tool/function calling
+3. Match one of the known tool-capable model families
 
-- **build** - Default, full access agent for development work
-- **plan** - Read-only agent for analysis and code exploration
+---
+
+## Features
+
+### Agent System
+
+Switch between agents with the `Tab` key:
+
+- **build** (default) - Full access agent for development work
+- **plan** - Read-only agent for analysis and exploration
   - Denies file edits by default
   - Asks permission before running bash commands
-  - Ideal for exploring unfamiliar codebases or planning changes
+  - Perfect for exploring unfamiliar codebases
 
-Also, included is a **general** subagent for complex searches and multi-step tasks.
-This is used internally and can be invoked using `@general` in messages.
+### Tools
 
-Learn more about [agents](https://opencode.ai/docs/agents).
+All the standard tools you need:
+- `bash` - Execute shell commands (with tree-sitter safety parsing)
+- `edit` - Intelligent file editing with diffs
+- `read` - Smart file reading
+- `write` - File creation
+- `grep` - Pattern-based code search
+- `glob` - File pattern matching
+- `task` - Multi-step task execution
+- `mcp` - Model Context Protocol support
 
-### Documentation
+### MCP Support
 
-For more info on how to configure OpenCode [**head over to our docs**](https://opencode.ai/docs).
+Woreda keeps **full MCP (Model Context Protocol) support**. Connect external tools and servers:
 
-### Contributing
+```jsonc
+// .opencode/opencode.jsonc
+{
+  "mcp": {
+    "servers": {
+      "filesystem": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
+      }
+    }
+  }
+}
+```
 
-If you're interested in contributing to OpenCode, please read our [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
+### Context Window Management
 
-### Building on OpenCode
+One of Woreda's core focuses is **intelligent context window management** for local models:
 
-If you are working on a project that's related to OpenCode and is using "opencode" as a part of its name; for example, "opencode-dashboard" or "opencode-mobile", please add a note to your README to clarify that it is not built by the OpenCode team and is not affiliated with us in anyway.
-
-### FAQ
-
-#### How is this different than Claude Code?
-
-It's very similar to Claude Code in terms of capability. Here are the key differences:
-
-- 100% open source
-- Not coupled to any provider. Although Anthropic is recommended, OpenCode can be used with OpenAI, Google or even local models. As models evolve the gaps between them will close and pricing will drop so being provider-agnostic is important.
-- Out of the box LSP support
-- A focus on TUI. OpenCode is built by neovim users and the creators of [terminal.shop](https://terminal.shop); we are going to push the limits of what's possible in the terminal.
-- A client/server architecture. This for example can allow OpenCode to run on your computer, while you can drive it remotely from a mobile app. Meaning that the TUI frontend is just one of the possible clients.
-
-#### What's the other repo?
-
-The other confusingly named repo has no relation to this one. You can [read the story behind it here](https://x.com/thdxr/status/1933561254481666466).
+- Auto-detects model context limits (32K, 64K, 128K)
+- Smart message compaction
+- Session snapshots and revert
+- Optimized for tool-heavy workflows
 
 ---
 
-**Join our community** [Discord](https://discord.gg/opencode) | [X.com](https://x.com/opencode)
+## Configuration
+
+Woreda uses the same config format as OpenCode for compatibility:
+
+```jsonc
+// .opencode/opencode.jsonc (or ~/.opencode/opencode.jsonc)
+{
+  "model": "ollama/qwen2.5-coder:latest",
+  "provider": {
+    "ollama": {
+      "api": "http://localhost:11434/v1",  // Override if needed
+      "models": {
+        "custom-model:latest": {
+          "name": "My Custom Model",
+          "tool_call": true  // Mark as tool-capable
+        }
+      }
+    }
+  }
+}
+```
+
+### Environment Variables
+
+- `OLLAMA_HOST` - Override Ollama API location (default: `http://localhost:11434`)
+
+---
+
+## Usage
+
+```bash
+# Start TUI
+woreda spawn
+
+# Run a one-off command
+woreda run "refactor this function to use async/await"
+
+# Attach to running server
+woreda tui attach
+```
+
+---
+
+## Development
+
+```bash
+# Clone and setup
+git clone https://github.com/samifouad/woreda.git
+cd woreda
+bun install
+
+# Run in dev mode
+bun dev
+
+# Type checking
+bun typecheck
+
+# Tests
+bun test
+
+# Build
+bun run build
+```
+
+---
+
+## Roadmap
+
+### Core Focus: Local Model Excellence
+- [ ] Enhanced context window management
+- [ ] Model-specific prompt optimization
+- [ ] Advanced agent collaboration
+- [ ] Session branching and merging
+- [ ] Intelligent tool selection per model
+
+### Ollama Integration
+- [ ] Auto-pull missing models
+- [ ] Model performance benchmarking
+- [ ] Quantization recommendations
+- [ ] `num_ctx` auto-tuning
+- [ ] Model switching based on task
+
+### Developer Experience
+- [ ] Rich TUI improvements (inspired by neovim)
+- [ ] Better error handling for local models
+- [ ] Streaming performance optimization
+- [ ] Offline-first architecture
+
+---
+
+## FAQ
+
+### Why fork OpenCode?
+
+OpenCode is excellent but deliberately multi-provider. It treats Ollama as a second-class citizen requiring manual JSON configuration. Woreda inverts this: **Ollama is the only citizen**, and we optimize everything around local model performance.
+
+### Why Ollama only?
+
+Focus breeds excellence. By targeting only Ollama, we can:
+- Optimize context window management for local constraints
+- Build features specific to local model capabilities
+- Remove all authentication, billing, and cloud complexity
+- Provide a superior local-first developer experience
+
+### What about cloud models?
+
+They're great! But they're also well-served by existing tools (including OpenCode, Claude Code, Cursor, etc.). Woreda carves out a niche: **local-only, privacy-first, cost-free coding**.
+
+### Can I still use MCP?
+
+Absolutely! MCP is provider-agnostic and works great with local models.
+
+### Will you add cloud providers back?
+
+No. That's the whole point. Use OpenCode if you want multi-provider support.
+
+---
+
+## Credits
+
+Forked from [OpenCode](https://github.com/sst/opencode) by the SST team. Massive respect for their work building the foundation.
+
+Changes:
+- Ripped out all cloud providers (Anthropic, OpenAI, Google, AWS, Azure)
+- Ripped out authentication system
+- Focused exclusively on Ollama models with tool support
+- TUI-only (removed web console and desktop app)
+- Renamed to Woreda (Ethiopian for "district" - representing local community)
+
+---
+
+## License
+
+MIT (inherited from OpenCode)

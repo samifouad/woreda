@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "1.0.72",
-  "name": "opencode",
+  "version": "0.1.0",
+  "name": "woreda",
   "type": "module",
   "private": true,
   "scripts": {
@@ -12,14 +12,12 @@
     "random": "echo 'Random script updated at $(date)'"
   },
   "bin": {
-    "opencode": "./bin/opencode"
+    "woreda": "./bin/opencode"
   },
   "exports": {
     "./*": "./src/*.ts"
   },
   "devDependencies": {
-    "@ai-sdk/amazon-bedrock": "2.2.10",
-    "@ai-sdk/google-vertex": "3.0.16",
     "@babel/core": "7.28.4",
     "@octokit/webhooks-types": "7.6.1",
     "@parcel/watcher-darwin-arm64": "2.5.1",

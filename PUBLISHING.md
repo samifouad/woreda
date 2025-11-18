@@ -10,47 +10,73 @@ This document explains how to publish Woreda to npm.
 
 ## Publishing Process
 
-### Automated via GitHub Actions (Recommended)
+### Tag-Based Automatic Releases (Recommended)
 
-1. Go to **Actions** tab in GitHub
-2. Select **"Publish Woreda"** workflow
-3. Click **"Run workflow"**
-4. Choose:
-   - **bump**: `major`, `minor`, or `patch`
-   - **version**: (optional) override with specific version like `1.0.0`
-   - **preview**: check to test without actually publishing
+Publishing is automatic whenever you push a tag starting with `v`.
 
-5. Click **"Run workflow"**
+**Option 1: Using the helper script**
 
-The workflow will:
-- ✅ Bump version in all package.json files
+```bash
+# Bump patch version (0.1.0 → 0.1.1)
+./script/version.ts patch
+
+# Bump minor version (0.1.0 → 0.2.0)
+./script/version.ts minor
+
+# Bump major version (0.1.0 → 1.0.0)
+./script/version.ts major
+
+# Or set specific version
+./script/version.ts 1.5.0
+
+# Then commit and push the tag
+git add .
+git commit -m "chore: bump version to X.Y.Z"
+git tag vX.Y.Z
+git push origin main --tags
+```
+
+**Option 2: Manual tagging**
+
+```bash
+# Create and push a tag directly
+git tag v0.2.0
+git push origin v0.2.0
+# Note: GitHub Actions will update package.json automatically
+```
+
+Either way, the GitHub Actions workflow will automatically:
+- ✅ Extract version from tag (v0.2.0 → 0.2.0)
+- ✅ Update all package.json files
 - ✅ Run type checking
 - ✅ Build the package
 - ✅ Publish to npm
-- ✅ Create git tag
-- ✅ Push to GitHub
-- ✅ Create GitHub release with changelog
+- ✅ Generate changelog from commits
+- ✅ Create GitHub release
 
 ### Manual Publishing (Local)
 
-```bash
-# Set environment variables
-export WOREDA_BUMP=patch  # or major, minor
-export WOREDA_VERSION=1.0.0  # optional override
-export NPM_CONFIG_TOKEN=your-npm-token
-
-# Run publish script
-chmod +x ./script/publish-woreda.ts
-./script/publish-woreda.ts
-```
-
-### Preview Mode
-
-To test the publish process without actually publishing:
+If you need to publish manually (testing, emergency, etc.):
 
 ```bash
-export WOREDA_PREVIEW=true
-./script/publish-woreda.ts
+# 1. Update version in package.json
+cd packages/opencode
+# Edit package.json to desired version
+
+# 2. Build
+bun run build
+
+# 3. Test locally
+npm pack
+# This creates woreda-X.X.X.tgz
+# Test: npm install -g ./woreda-X.X.X.tgz
+
+# 4. Publish
+npm publish --access public
+
+# 5. Create git tag
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 ## Version Bumping

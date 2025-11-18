@@ -2,12 +2,10 @@ import { Global } from "../global"
 import { Log } from "../util/log"
 import path from "path"
 import z from "zod"
-import { data } from "./models-macro" with { type: "macro" }
-import { Installation } from "../installation"
 
 export namespace ModelsDev {
-  const log = Log.create({ service: "models.dev" })
-  const filepath = path.join(Global.Path.cache, "models.json")
+  const log = Log.create({ service: "ollama.models" })
+  const filepath = path.join(Global.Path.cache, "ollama-models.json")
 
   export const Model = z
     .object({
@@ -68,32 +66,184 @@ export namespace ModelsDev {
 
   export type Provider = z.infer<typeof Provider>
 
-  export async function get() {
-    refresh()
+  // Known Ollama models with tool support
+  const TOOL_CAPABLE_MODELS = [
+    "llama3.2",
+    "llama3.1",
+    "qwen2.5-coder",
+    "mistral-nemo",
+    "deepseek-coder-v2",
+    "command-r",
+    "firefunction-v2",
+  ]
+
+  interface OllamaModel {
+    name: string
+    modified_at: string
+    size: number
+    digest: string
+    details?: {
+      parameter_size?: string
+      quantization_level?: string
+    }
+  }
+
+  interface OllamaListResponse {
+    models: OllamaModel[]
+  }
+
+  function modelSupportsTools(modelName: string): boolean {
+    return TOOL_CAPABLE_MODELS.some((capable) => modelName.toLowerCase().includes(capable))
+  }
+
+  function parseModelInfo(ollamaModel: OllamaModel): Model {
+    const name = ollamaModel.name
+    const displayName = name.split(":")[0] // Remove tag
+    const supportsTools = modelSupportsTools(name)
+
+    // Estimate context window based on known models
+    let contextWindow = 32768 // Default for most modern models
+    if (name.includes("llama3.2")) contextWindow = 131072
+    else if (name.includes("llama3.1")) contextWindow = 131072
+    else if (name.includes("qwen2.5")) contextWindow = 131072
+    else if (name.includes("deepseek")) contextWindow = 65536
+
+    return {
+      id: name,
+      name: displayName,
+      release_date: ollamaModel.modified_at,
+      attachment: false,
+      reasoning: false,
+      temperature: true,
+      tool_call: supportsTools,
+      cost: {
+        input: 0,
+        output: 0,
+        cache_read: 0,
+        cache_write: 0,
+      },
+      limit: {
+        context: contextWindow,
+        output: 8192,
+      },
+      modalities: {
+        input: ["text"],
+        output: ["text"],
+      },
+      options: {},
+    }
+  }
+
+  export async function get(): Promise<Record<string, Provider>> {
+    const cached = await loadCache()
+    if (cached) return cached
+
+    const models = await fetchOllamaModels()
+    const provider = buildProvider(models)
+    await saveCache(provider)
+    return provider
+  }
+
+  async function loadCache(): Promise<Record<string, Provider> | null> {
     const file = Bun.file(filepath)
-    const result = await file.json().catch(() => {})
-    if (result) return result as Record<string, Provider>
-    const json = await data()
-    return JSON.parse(json) as Record<string, Provider>
+    const exists = await file.exists()
+    if (!exists) return null
+
+    try {
+      const result = await file.json()
+      // Cache is valid for 5 minutes
+      const cacheAge = Date.now() - (await file.lastModified)
+      if (cacheAge < 5 * 60 * 1000) {
+        return result as Record<string, Provider>
+      }
+    } catch (e) {
+      log.error("Failed to load cache", { error: e })
+    }
+    return null
+  }
+
+  async function saveCache(provider: Record<string, Provider>) {
+    const file = Bun.file(filepath)
+    await Bun.write(file, JSON.stringify(provider, null, 2))
+  }
+
+  async function fetchOllamaModels(): Promise<OllamaModel[]> {
+    const baseURLs = [
+      process.env["OLLAMA_HOST"] ?? "http://localhost:11434",
+      "http://127.0.0.1:11434",
+    ]
+
+    for (const baseURL of baseURLs) {
+      try {
+        log.info("Checking Ollama at", { baseURL })
+        const response = await fetch(`${baseURL}/api/tags`, {
+          signal: AbortSignal.timeout(3000),
+        })
+
+        if (response.ok) {
+          const data = (await response.json()) as OllamaListResponse
+          log.info("Found Ollama models", { count: data.models.length })
+          return data.models
+        }
+      } catch (e) {
+        log.debug("Ollama not available at", { baseURL, error: e })
+      }
+    }
+
+    log.warn("Ollama not detected, returning default models")
+    return []
+  }
+
+  function buildProvider(models: OllamaModel[]): Record<string, Provider> {
+    const toolCapableModels = models
+      .filter((m) => modelSupportsTools(m.name))
+      .reduce(
+        (acc, model) => {
+          acc[model.name] = parseModelInfo(model)
+          return acc
+        },
+        {} as Record<string, Model>,
+      )
+
+    // If no models found, provide recommended defaults
+    const modelsToUse =
+      Object.keys(toolCapableModels).length > 0
+        ? toolCapableModels
+        : {
+            "qwen2.5-coder:latest": {
+              id: "qwen2.5-coder:latest",
+              name: "Qwen 2.5 Coder",
+              release_date: new Date().toISOString(),
+              attachment: false,
+              reasoning: false,
+              temperature: true,
+              tool_call: true,
+              cost: { input: 0, output: 0, cache_read: 0, cache_write: 0 },
+              limit: { context: 131072, output: 8192 },
+              modalities: { input: ["text"], output: ["text"] },
+              options: {},
+            },
+          }
+
+    return {
+      ollama: {
+        id: "ollama",
+        name: "Ollama (Local)",
+        env: [],
+        npm: "@ai-sdk/openai-compatible",
+        api: process.env["OLLAMA_HOST"] ?? "http://localhost:11434/v1",
+        models: modelsToUse,
+      },
+    }
   }
 
   export async function refresh() {
-    const file = Bun.file(filepath)
-    log.info("refreshing", {
-      file,
-    })
-    const result = await fetch("https://models.dev/api.json", {
-      headers: {
-        "User-Agent": Installation.USER_AGENT,
-      },
-      signal: AbortSignal.timeout(10 * 1000),
-    }).catch((e) => {
-      log.error("Failed to fetch models.dev", {
-        error: e,
-      })
-    })
-    if (result && result.ok) await Bun.write(file, await result.text())
+    log.info("Refreshing Ollama models")
+    const models = await fetchOllamaModels()
+    const provider = buildProvider(models)
+    await saveCache(provider)
   }
 }
 
-setInterval(() => ModelsDev.refresh(), 60 * 1000 * 60).unref()
+// Refresh Ollama models every 5 minutes
+setInterval(() => ModelsDev.refresh(), 5 * 60 * 1000).unref()

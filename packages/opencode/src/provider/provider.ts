@@ -4,14 +4,10 @@ import { Config } from "../config/config"
 import { mergeDeep, sortBy } from "remeda"
 import { NoSuchModelError, type LanguageModel, type Provider as SDK } from "ai"
 import { Log } from "../util/log"
-import { BunProc } from "../bun"
-import { Plugin } from "../plugin"
 import { ModelsDev } from "./models"
 import { NamedError } from "../util/error"
-import { Auth } from "../auth"
 import { Instance } from "../project/instance"
 import { Global } from "../global"
-import { Flag } from "../flag/flag"
 import { iife } from "@/util/iife"
 
 export namespace Provider {
@@ -23,216 +19,16 @@ export namespace Provider {
     options?: Record<string, any>
   }>
 
-  type Source = "env" | "config" | "custom" | "api"
+  type Source = "env" | "config" | "custom"
 
   const CUSTOM_LOADERS: Record<string, CustomLoader> = {
-    async anthropic() {
-      return {
-        autoload: false,
-        options: {
-          headers: {
-            "anthropic-beta":
-              "claude-code-20250219,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14",
-          },
-        },
-      }
-    },
-    async opencode(input) {
-      const hasKey = await (async () => {
-        if (input.env.some((item) => process.env[item])) return true
-        if (await Auth.get(input.id)) return true
-        return false
-      })()
-
-      if (!hasKey) {
-        for (const [key, value] of Object.entries(input.models)) {
-          if (value.cost.input === 0) continue
-          delete input.models[key]
-        }
-      }
-
-      return {
-        autoload: Object.keys(input.models).length > 0,
-        options: hasKey ? {} : { apiKey: "public" },
-      }
-    },
-    openai: async () => {
-      return {
-        autoload: false,
-        async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
-          return sdk.responses(modelID)
-        },
-        options: {},
-      }
-    },
-    azure: async () => {
-      return {
-        autoload: false,
-        async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
-          if (options?.["useCompletionUrls"]) {
-            return sdk.chat(modelID)
-          } else {
-            return sdk.responses(modelID)
-          }
-        },
-        options: {},
-      }
-    },
-    "azure-cognitive-services": async () => {
-      const resourceName = process.env["AZURE_COGNITIVE_SERVICES_RESOURCE_NAME"]
-      return {
-        autoload: false,
-        async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
-          if (options?.["useCompletionUrls"]) {
-            return sdk.chat(modelID)
-          } else {
-            return sdk.responses(modelID)
-          }
-        },
-        options: {
-          baseURL: resourceName ? `https://${resourceName}.cognitiveservices.azure.com/openai` : undefined,
-        },
-      }
-    },
-    "amazon-bedrock": async () => {
-      if (!process.env["AWS_PROFILE"] && !process.env["AWS_ACCESS_KEY_ID"] && !process.env["AWS_BEARER_TOKEN_BEDROCK"])
-        return { autoload: false }
-
-      const region = process.env["AWS_REGION"] ?? "us-east-1"
-
-      const { fromNodeProviderChain } = await import(await BunProc.install("@aws-sdk/credential-providers"))
+    async ollama(input) {
       return {
         autoload: true,
         options: {
-          region,
-          credentialProvider: fromNodeProviderChain(),
-        },
-        async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
-          let regionPrefix = region.split("-")[0]
-
-          switch (regionPrefix) {
-            case "us": {
-              const modelRequiresPrefix = [
-                "nova-micro",
-                "nova-lite",
-                "nova-pro",
-                "nova-premier",
-                "claude",
-                "deepseek",
-              ].some((m) => modelID.includes(m))
-              const isGovCloud = region.startsWith("us-gov")
-              if (modelRequiresPrefix && !isGovCloud) {
-                modelID = `${regionPrefix}.${modelID}`
-              }
-              break
-            }
-            case "eu": {
-              const regionRequiresPrefix = [
-                "eu-west-1",
-                "eu-west-2",
-                "eu-west-3",
-                "eu-north-1",
-                "eu-central-1",
-                "eu-south-1",
-                "eu-south-2",
-              ].some((r) => region.includes(r))
-              const modelRequiresPrefix = ["claude", "nova-lite", "nova-micro", "llama3", "pixtral"].some((m) =>
-                modelID.includes(m),
-              )
-              if (regionRequiresPrefix && modelRequiresPrefix) {
-                modelID = `${regionPrefix}.${modelID}`
-              }
-              break
-            }
-            case "ap": {
-              const isAustraliaRegion = ["ap-southeast-2", "ap-southeast-4"].includes(region)
-              if (
-                isAustraliaRegion &&
-                ["anthropic.claude-sonnet-4-5", "anthropic.claude-haiku"].some((m) => modelID.includes(m))
-              ) {
-                regionPrefix = "au"
-                modelID = `${regionPrefix}.${modelID}`
-              } else {
-                const modelRequiresPrefix = ["claude", "nova-lite", "nova-micro", "nova-pro"].some((m) =>
-                  modelID.includes(m),
-                )
-                if (modelRequiresPrefix) {
-                  regionPrefix = "apac"
-                  modelID = `${regionPrefix}.${modelID}`
-                }
-              }
-              break
-            }
-          }
-
-          return sdk.languageModel(modelID)
-        },
-      }
-    },
-    openrouter: async () => {
-      return {
-        autoload: false,
-        options: {
-          headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-          },
-        },
-      }
-    },
-    vercel: async () => {
-      return {
-        autoload: false,
-        options: {
-          headers: {
-            "http-referer": "https://opencode.ai/",
-            "x-title": "opencode",
-          },
-        },
-      }
-    },
-    "google-vertex": async () => {
-      const project = process.env["GOOGLE_CLOUD_PROJECT"] ?? process.env["GCP_PROJECT"] ?? process.env["GCLOUD_PROJECT"]
-      const location = process.env["GOOGLE_CLOUD_LOCATION"] ?? process.env["VERTEX_LOCATION"] ?? "us-east5"
-      const autoload = Boolean(project)
-      if (!autoload) return { autoload: false }
-      return {
-        autoload: true,
-        options: {
-          project,
-          location,
-        },
-        async getModel(sdk: any, modelID: string) {
-          const id = String(modelID).trim()
-          return sdk.languageModel(id)
-        },
-      }
-    },
-    "google-vertex-anthropic": async () => {
-      const project = process.env["GOOGLE_CLOUD_PROJECT"] ?? process.env["GCP_PROJECT"] ?? process.env["GCLOUD_PROJECT"]
-      const location = process.env["GOOGLE_CLOUD_LOCATION"] ?? process.env["VERTEX_LOCATION"] ?? "global"
-      const autoload = Boolean(project)
-      if (!autoload) return { autoload: false }
-      return {
-        autoload: true,
-        options: {
-          project,
-          location,
-        },
-        async getModel(sdk: any, modelID: string) {
-          const id = String(modelID).trim()
-          return sdk.languageModel(id)
-        },
-      }
-    },
-    zenmux: async () => {
-      return {
-        autoload: false,
-        options: {
-          headers: {
-            "HTTP-Referer": "https://opencode.ai/",
-            "X-Title": "opencode",
-          },
+          baseURL: input.api ?? process.env["OLLAMA_HOST"] ?? "http://localhost:11434/v1",
+          apiKey: "ollama", // Required by SDK but not used
+          includeUsage: true,
         },
       }
     },
@@ -292,18 +88,6 @@ export namespace Provider {
     }
 
     const configProviders = Object.entries(config.provider ?? {})
-
-    // Add GitHub Copilot Enterprise provider that inherits from GitHub Copilot
-    if (database["github-copilot"]) {
-      const githubCopilot = database["github-copilot"]
-      database["github-copilot-enterprise"] = {
-        ...githubCopilot,
-        id: "github-copilot-enterprise",
-        name: "GitHub Copilot Enterprise",
-        // Enterprise uses a different API endpoint - will be set dynamically based on auth
-        api: undefined,
-      }
-    }
 
     for (const [providerID, provider] of configProviders) {
       const existing = database[providerID]
@@ -371,96 +155,30 @@ export namespace Provider {
     }
 
     const disabled = await Config.get().then((cfg) => new Set(cfg.disabled_providers ?? []))
-    // load env
-    for (const [providerID, provider] of Object.entries(database)) {
-      if (disabled.has(providerID)) continue
-      const apiKey = provider.env.map((item) => process.env[item]).at(0)
-      if (!apiKey) continue
-      mergeProvider(
-        providerID,
-        // only include apiKey if there's only one potential option
-        provider.env.length === 1 ? { apiKey } : {},
-        "env",
-      )
-    }
 
-    // load apikeys
-    for (const [providerID, provider] of Object.entries(await Auth.all())) {
-      if (disabled.has(providerID)) continue
-      if (provider.type === "api") {
-        mergeProvider(providerID, { apiKey: provider.key }, "api")
-      }
-    }
-
-    // load custom
+    // Load Ollama provider (always autoload)
     for (const [providerID, fn] of Object.entries(CUSTOM_LOADERS)) {
       if (disabled.has(providerID)) continue
-      const result = await fn(database[providerID])
-      if (result && (result.autoload || providers[providerID])) {
+      const providerInfo = database[providerID]
+      if (!providerInfo) continue
+      const result = await fn(providerInfo)
+      if (result && result.autoload) {
         mergeProvider(providerID, result.options ?? {}, "custom", result.getModel)
       }
     }
 
-    for (const plugin of await Plugin.list()) {
-      if (!plugin.auth) continue
-      const providerID = plugin.auth.provider
-      if (disabled.has(providerID)) continue
-
-      // For github-copilot plugin, check if auth exists for either github-copilot or github-copilot-enterprise
-      let hasAuth = false
-      const auth = await Auth.get(providerID)
-      if (auth) hasAuth = true
-
-      // Special handling for github-copilot: also check for enterprise auth
-      if (providerID === "github-copilot" && !hasAuth) {
-        const enterpriseAuth = await Auth.get("github-copilot-enterprise")
-        if (enterpriseAuth) hasAuth = true
-      }
-
-      if (!hasAuth) continue
-      if (!plugin.auth.loader) continue
-
-      // Load for the main provider if auth exists
-      if (auth) {
-        const options = await plugin.auth.loader(() => Auth.get(providerID) as any, database[plugin.auth.provider])
-        mergeProvider(plugin.auth.provider, options ?? {}, "custom")
-      }
-
-      // If this is github-copilot plugin, also register for github-copilot-enterprise if auth exists
-      if (providerID === "github-copilot") {
-        const enterpriseProviderID = "github-copilot-enterprise"
-        if (!disabled.has(enterpriseProviderID)) {
-          const enterpriseAuth = await Auth.get(enterpriseProviderID)
-          if (enterpriseAuth) {
-            const enterpriseOptions = await plugin.auth.loader(
-              () => Auth.get(enterpriseProviderID) as any,
-              database[enterpriseProviderID],
-            )
-            mergeProvider(enterpriseProviderID, enterpriseOptions ?? {}, "custom")
-          }
-        }
-      }
-    }
-
-    // load config
+    // Allow config overrides
     for (const [providerID, provider] of configProviders) {
       mergeProvider(providerID, provider.options ?? {}, "config")
     }
 
     for (const [providerID, provider] of Object.entries(providers)) {
       const filteredModels = Object.fromEntries(
-        Object.entries(provider.info.models)
-          // Filter out blacklisted models
-          .filter(
-            ([modelID]) =>
-              modelID !== "gpt-5-chat-latest" && !(providerID === "openrouter" && modelID === "openai/gpt-5-chat"),
-          )
-          // Filter out experimental models
-          .filter(
-            ([, model]) =>
-              ((!model.experimental && model.status !== "alpha") || Flag.OPENCODE_ENABLE_EXPERIMENTAL_MODELS) &&
-              model.status !== "deprecated",
-          ),
+        Object.entries(provider.info.models).filter(
+          ([, model]) =>
+            // Only show models with tool support
+            model.tool_call && model.status !== "deprecated",
+        ),
       )
       provider.info.models = filteredModels
 
@@ -468,7 +186,7 @@ export namespace Provider {
         delete providers[providerID]
         continue
       }
-      log.info("found", { providerID })
+      log.info("found ollama provider", { providerID, modelCount: Object.keys(filteredModels).length })
     }
 
     return {
@@ -498,23 +216,9 @@ export namespace Provider {
       const existing = s.sdk.get(key)
       if (existing) return existing
 
-      let installedPath: string
-      if (!pkg.startsWith("file://")) {
-        installedPath = await BunProc.install(pkg, "latest")
-      } else {
-        log.info("loading local provider", { pkg })
-        installedPath = pkg
-      }
-
-      // The `google-vertex-anthropic` provider points to the `@ai-sdk/google-vertex` package.
-      // Ref: https://github.com/sst/models.dev/blob/0a87de42ab177bebad0620a889e2eb2b4a5dd4ab/providers/google-vertex-anthropic/provider.toml
-      // However, the actual export is at the subpath `@ai-sdk/google-vertex/anthropic`.
-      // Ref: https://ai-sdk.dev/providers/ai-sdk-providers/google-vertex#google-vertex-anthropic-provider-usage
-      // In addition, Bun's dynamic import logic does not support subpath imports,
-      // so we patch the import path to load directly from `dist`.
-      const modPath =
-        provider.id === "google-vertex-anthropic" ? `${installedPath}/dist/anthropic/index.mjs` : installedPath
-      const mod = await import(modPath)
+      // For Ollama, we use the openai-compatible SDK which should already be in node_modules
+      const installedPath = pkg
+      const mod = await import(installedPath)
       if (options["timeout"] !== undefined && options["timeout"] !== null) {
         // Preserve custom fetch if it exists, wrap it with timeout logic
         const customFetch = options["fetch"]
@@ -612,22 +316,22 @@ export namespace Provider {
 
     const provider = await state().then((state) => state.providers[providerID])
     if (!provider) return
-    let priority = ["claude-haiku-4-5", "claude-haiku-4.5", "3-5-haiku", "3.5-haiku", "gemini-2.5-flash", "gpt-5-nano"]
-    // claude-haiku-4.5 is considered a premium model in github copilot, we shouldn't use premium requests for title gen
-    if (providerID === "github-copilot") {
-      priority = priority.filter((m) => m !== "claude-haiku-4.5")
-    }
-    if (providerID === "opencode" || providerID === "local") {
-      priority = ["gpt-5-nano"]
-    }
+
+    // Prefer faster, smaller models for quick tasks
+    const priority = ["qwen2.5-coder:1.5b", "qwen2.5-coder:3b", "llama3.2:3b", "llama3.2:1b"]
+
     for (const item of priority) {
       for (const model of Object.keys(provider.info.models)) {
         if (model.includes(item)) return getModel(providerID, model)
       }
     }
+
+    // Fallback to first available model
+    const firstModel = Object.keys(provider.info.models)[0]
+    if (firstModel) return getModel(providerID, firstModel)
   }
 
-  const priority = ["gemini-2.5-pro-preview", "gpt-5", "claude-sonnet-4", "big-pickle"]
+  const priority = ["qwen2.5-coder", "deepseek-coder-v2", "llama3.2", "llama3.1", "mistral-nemo"]
   export function sort(models: ModelsDev.Model[]) {
     return sortBy(
       models,

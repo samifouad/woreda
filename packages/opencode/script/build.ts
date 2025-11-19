@@ -105,7 +105,7 @@ for (const item of targets) {
 
   // Resolve @opentui/core package path robustly using import.meta.resolve
   const opentuiCorePath = path.dirname(fileURLToPath(import.meta.resolve("@opentui/core")))
-  const parserWorker = fs.realpathSync(path.join(opentuiCorePath, "lib/tree-sitter/parser.worker.js"))
+  const parserWorker = fs.realpathSync(path.join(opentuiCorePath, "parser.worker.js"))
   const workerPath = "./src/cli/cmd/tui/worker.ts"
 
   await Bun.build({

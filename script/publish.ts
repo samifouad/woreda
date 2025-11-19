@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 
 import { $ } from "bun"
-import { createOpencode } from "@opencode-ai/sdk"
 import { Script } from "@opencode-ai/script"
 
 const notes = [] as string[]
@@ -9,69 +8,40 @@ const notes = [] as string[]
 console.log("=== publishing ===\n")
 
 if (!Script.preview) {
-  const previous = await fetch("https://registry.npmjs.org/opencode-ai/latest")
-    .then((res) => {
-      if (!res.ok) throw new Error(res.statusText)
-      return res.json()
-    })
-    .then((data: any) => data.version)
+  // Try to get previous version from npm registry
+  try {
+    const previous = await fetch("https://registry.npmjs.org/woreda-ai/latest")
+      .then((res) => {
+        if (!res.ok) return null
+        return res.json()
+      })
+      .then((data: any) => data?.version)
 
-  const log =
-    await $`git log v${previous}..HEAD --oneline --format="%h %s" -- packages/opencode packages/sdk packages/plugin`.text()
+    if (previous) {
+      const log =
+        await $`git log v${previous}..HEAD --oneline --format="%h %s" -- packages/opencode packages/sdk packages/plugin`.text()
 
-  const commits = log
-    .split("\n")
-    .filter((line) => line && !line.match(/^\w+ (ignore:|test:|chore:|ci:)/i))
-    .join("\n")
+      const commits = log
+        .split("\n")
+        .filter((line) => line && !line.match(/^\w+ (ignore:|test:|chore:|ci:)/i))
+        .join("\n")
 
-  const opencode = await createOpencode()
-  const session = await opencode.client.session.create()
-  console.log("generating changelog since " + previous)
-  const raw = await opencode.client.session
-    .prompt({
-      path: {
-        id: session.data!.id,
-      },
-      body: {
-        model: {
-          providerID: "opencode",
-          modelID: "kimi-k2",
-        },
-        parts: [
-          {
-            type: "text",
-            text: `
-          Analyze these commits and generate a changelog of all notable user facing changes.
-
-          Commits between ${previous} and HEAD:
-          ${commits}
-
-          - Do NOT make general statements about "improvements", be very specific about what was changed.
-          - Do NOT include any information about code changes if they do not affect the user facing changes.
-          - For commits that are already well-written and descriptive, avoid rewording them. Simply capitalize the first letter, fix any misspellings, and ensure proper English grammar.
-          - DO NOT read any other commits than the ones listed above (THIS IS IMPORTANT TO AVOID DUPLICATING THINGS IN OUR CHANGELOG)
-
-          IMPORTANT: ONLY return a bulleted list of changes, do not include any other information. Do not include a preamble like "Based on my analysis..."
-
-          <example>
-          - Added ability to @ mention agents
-          - Fixed a bug where the TUI would render improperly on some terminals
-          </example>
-          `,
-          },
-        ],
-      },
-    })
-    .then((x) => x.data?.parts?.find((y) => y.type === "text")?.text)
-  for (const line of raw?.split("\n") ?? []) {
-    if (line.startsWith("- ")) {
-      notes.push(line)
+      if (commits) {
+        notes.push(`Changes since ${previous}:`)
+        notes.push(commits)
+      }
     }
+  } catch (e) {
+    console.log("Could not fetch previous version from npm, skipping changelog")
   }
-  console.log("---- Generated Changelog ----")
+
+  if (notes.length === 0) {
+    notes.push("Initial release of Woreda - Ollama-first AI coding agent")
+  }
+
+  console.log("---- Changelog ----")
   console.log(notes.join("\n"))
-  console.log("-----------------------------")
-  opencode.server.close()
+  console.log("-------------------")
 }
 
 const pkgjsons = await Array.fromAsync(

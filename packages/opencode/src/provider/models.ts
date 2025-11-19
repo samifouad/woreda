@@ -230,8 +230,8 @@ export namespace ModelsDev {
         id: "ollama",
         name: "Ollama (Local)",
         env: [],
-        npm: "@ai-sdk/openai-compatible",
-        api: process.env["OLLAMA_HOST"] ?? "http://localhost:11434/v1",
+        npm: "ollama-ai-provider-v2",
+        api: process.env["OLLAMA_HOST"] ?? "http://localhost:11434",
         models: modelsToUse,
       },
     }

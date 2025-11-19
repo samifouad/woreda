@@ -209,21 +209,19 @@ export namespace Provider {
       const s = await state()
       const pkg = model.provider?.npm ?? provider.npm ?? provider.id
       const options = { ...s.providers[provider.id]?.options }
-      if (pkg.includes("@ai-sdk/openai-compatible") && options["includeUsage"] === undefined) {
-        options["includeUsage"] = true
-      }
       const key = Bun.hash.xxHash32(JSON.stringify({ pkg, options }))
       const existing = s.sdk.get(key)
       if (existing) return existing
 
-      // For Ollama, we use the openai-compatible SDK which should already be in node_modules
       const installedPath = pkg
       const mod = await import(installedPath)
+
+      // Handle timeout wrapping for all providers
       if (options["timeout"] !== undefined && options["timeout"] !== null) {
         // Preserve custom fetch if it exists, wrap it with timeout logic
         const customFetch = options["fetch"]
         options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
-          const { signal, ...rest } = init ?? {}
+          const { signal, ...rest} = init ?? {}
 
           const signals: AbortSignal[] = []
           if (signal) signals.push(signal)
@@ -240,11 +238,24 @@ export namespace Provider {
           })
         }
       }
-      const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
-      const loaded = fn({
-        name: provider.id,
-        ...options,
-      })
+
+      // Handle different provider SDKs
+      let loaded: SDK
+      if (pkg === "ollama-ai-provider-v2") {
+        // ollama-ai-provider-v2 exports { createOllama }
+        loaded = mod.createOllama({
+          baseURL: provider.api,
+          ...options,
+        })
+      } else {
+        // Other providers use createXxx pattern
+        const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
+        loaded = fn({
+          name: provider.id,
+          ...options,
+        })
+      }
+
       s.sdk.set(key, loaded)
       return loaded as SDK
     })().catch((e) => {

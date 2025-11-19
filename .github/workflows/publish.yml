@@ -67,6 +67,17 @@ jobs:
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
+      - name: Debug - Check @opentui/core package structure
+        run: |
+          echo "=== @opentui/core package location ==="
+          find node_modules -name "@opentui" -type d 2>/dev/null | head -5
+          echo ""
+          echo "=== @opentui/core contents ==="
+          ls -la node_modules/@opentui/core/ 2>/dev/null || echo "Not found at node_modules/@opentui/core"
+          echo ""
+          echo "=== Looking for parser.worker.js ==="
+          find node_modules/@opentui/core -name "parser.worker.*" 2>/dev/null || echo "No parser worker files found"
+
       - name: Publish to npm and create release
         run: ./script/publish.ts
         env:

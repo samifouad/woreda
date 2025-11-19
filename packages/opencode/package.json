@@ -20,7 +20,7 @@
     "random": "echo 'Random script updated at $(date)'"
   },
   "bin": {
-    "woreda": "./bin/opencode"
+    "woreda": "./bin/woreda"
   },
   "exports": {
     "./*": "./src/*.ts"

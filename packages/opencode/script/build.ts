@@ -115,8 +115,8 @@ for (const item of targets) {
     sourcemap: "external",
     compile: {
       target: name.replace(pkg.name, "bun") as any,
-      outfile: `dist/${name}/bin/opencode`,
-      execArgv: [`--user-agent=opencode/${Script.version}`, `--env-file=""`, `--`],
+      outfile: `dist/${name}/bin/woreda`,
+      execArgv: [`--user-agent=woreda/${Script.version}`, `--env-file=""`, `--`],
       windows: {},
     },
     entrypoints: ["./src/index.ts", parserWorker, workerPath],

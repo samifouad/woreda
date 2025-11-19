@@ -14,9 +14,9 @@ const { binaries } = await import("./build.ts")
   await $`./dist/${name}/bin/woreda --version`
 }
 
-await $`mkdir -p ./dist/${pkg.name}`
-await $`cp -r ./bin ./dist/${pkg.name}/bin`
-await $`cp ./script/postinstall.mjs ./dist/${pkg.name}/postinstall.mjs`
+await $`mkdir -p ./dist/${pkg.name}/bin`
+await $`cp ./script/woreda-wrapper.mjs ./dist/${pkg.name}/bin/${pkg.name}`
+await $`chmod +x ./dist/${pkg.name}/bin/${pkg.name}`
 
 await Bun.file(`./dist/${pkg.name}/package.json`).write(
   JSON.stringify(
@@ -35,9 +35,6 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
       license: "MIT",
       bin: {
         [pkg.name]: `./bin/${pkg.name}`,
-      },
-      scripts: {
-        postinstall: "bun ./postinstall.mjs || node ./postinstall.mjs",
       },
       optionalDependencies: binaries,
     },

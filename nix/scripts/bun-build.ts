@@ -1,10 +1,13 @@
 import solidPlugin from "./packages/opencode/node_modules/@opentui/solid/scripts/solid-plugin"
 import path from "path"
 import fs from "fs"
+import { fileURLToPath } from "url"
 
 const version = "@VERSION@"
 const pkg = path.join(process.cwd(), "packages/opencode")
-const parser = fs.realpathSync(path.join(pkg, "./node_modules/@opentui/core/lib/tree-sitter/parser.worker.js"))
+// Resolve @opentui/core package path robustly using import.meta.resolve
+const opentuiCorePath = path.dirname(fileURLToPath(import.meta.resolve("@opentui/core")))
+const parser = fs.realpathSync(path.join(opentuiCorePath, "lib/tree-sitter/parser.worker.js"))
 const worker = "./src/cli/cmd/tui/worker.ts"
 const target = process.env["BUN_COMPILE_TARGET"]
 

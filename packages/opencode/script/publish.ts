@@ -22,13 +22,23 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
   JSON.stringify(
     {
       name: pkg.name + "-ai",
+      version: Script.version,
+      description: "Woreda - Ollama-first AI coding agent",
+      repository: {
+        type: "git",
+        url: "https://github.com/samifouad/woreda",
+      },
+      homepage: "https://github.com/samifouad/woreda",
+      bugs: {
+        url: "https://github.com/samifouad/woreda/issues",
+      },
+      license: "MIT",
       bin: {
         [pkg.name]: `./bin/${pkg.name}`,
       },
       scripts: {
         postinstall: "bun ./postinstall.mjs || node ./postinstall.mjs",
       },
-      version: Script.version,
       optionalDependencies: binaries,
     },
     null,

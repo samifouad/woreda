@@ -12,7 +12,7 @@ import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 
 export namespace SystemPrompt {
-  export function header(_providerID: string) {
+  export function header(_providerID: string): string[] {
     // Ollama doesn't need special headers
     return []
   }

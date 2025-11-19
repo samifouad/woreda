@@ -206,7 +206,7 @@ export namespace ModelsDev {
       )
 
     // If no models found, provide recommended defaults
-    const modelsToUse =
+    const modelsToUse: Record<string, Model> =
       Object.keys(toolCapableModels).length > 0
         ? toolCapableModels
         : {

@@ -21,7 +21,7 @@ await $`chmod +x ./dist/${pkg.name}/bin/${pkg.name}`
 await Bun.file(`./dist/${pkg.name}/package.json`).write(
   JSON.stringify(
     {
-      name: pkg.name + "-ai",
+      name: pkg.name,
       version: Script.version,
       description: "Woreda - Ollama-first AI coding agent",
       repository: {
@@ -61,7 +61,7 @@ if (!Script.preview) {
   for (const [name] of Object.entries(binaries)) {
     await $`cd dist/${name} && npm dist-tag add ${name}@${Script.version} ${majorTag}`
   }
-  await $`cd ./dist/${pkg.name} && npm dist-tag add ${pkg.name}-ai@${Script.version} ${majorTag}`
+  await $`cd ./dist/${pkg.name} && npm dist-tag add ${pkg.name}@${Script.version} ${majorTag}`
 }
 
 if (!Script.preview) {

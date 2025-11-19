@@ -10,7 +10,7 @@ console.log("=== publishing ===\n")
 if (!Script.preview) {
   // Try to get previous version from npm registry
   try {
-    const previous = await fetch("https://registry.npmjs.org/woreda-ai/latest")
+    const previous = await fetch("https://registry.npmjs.org/woreda/latest")
       .then((res) => {
         if (!res.ok) return null
         return res.json()

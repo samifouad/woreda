@@ -1,10 +1,35 @@
 {
-  "name": "runnerwatch", "version": "0.1.0", "description": "Manage GitHub Actions self-hosted runners over SSH.",
-  "type": "module", "module": "src/runnerwatch.ts", "bin": {"runnerwatch": "src/runnerwatch.ts"},
-  "packageManager": "bun@1.3.14", "engines": {"bun": ">=1.3.14"},
-  "scripts": {"start": "bun src/runnerwatch.ts", "test": "bun test", "typecheck": "tsc --noEmit", "build": "bun scripts/build-all.ts"},
-  "dependencies": {"commander": "15.0.0", "inquirer": "14.2.2", "zod": "4.6.5"},
-  "devDependencies": {"@types/bun": "1.4.2", "typescript": "5.9.3"},
-  "repository": {"type": "git", "url": "https://github.com/samifouad/runnerwatch.git"},
-  "author": "Sami Fouad", "license": "Apache-2.0"
+  "name": "runnerwatch",
+  "version": "0.1.1",
+  "description": "Manage GitHub Actions self-hosted runners over SSH.",
+  "type": "module",
+  "module": "src/runnerwatch.ts",
+  "bin": {
+    "runnerwatch": "src/runnerwatch.ts"
+  },
+  "packageManager": "bun@1.3.14",
+  "engines": {
+    "bun": ">=1.3.14"
+  },
+  "scripts": {
+    "start": "bun src/runnerwatch.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "build": "bun scripts/build-all.ts"
+  },
+  "dependencies": {
+    "commander": "15.0.0",
+    "inquirer": "14.2.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "5.9.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samifouad/runnerwatch.git"
+  },
+  "author": "Sami Fouad",
+  "license": "Apache-2.0"
 }

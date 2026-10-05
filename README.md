@@ -95,4 +95,3 @@ bun run build
 ```
 
 The CLI lives in one TypeScript file, `src/runnerwatch.ts`. Standalone releases include the runtime. No dashboard server or separate database is needed.
-

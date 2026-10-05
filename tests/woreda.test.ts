@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { assertIdle, downloadScript, endpoint, execute, labelList, loadSettings, parseProbe, platformFor, probeScript, runnerHealth, saveSettings, select, serviceScript, shell, type GitHubRunner, type LocalRunner, type Row, type Snapshot } from '../src/runnerwatch.ts'
+import { defaultConfigPath, assertIdle, downloadScript, endpoint, execute, labelList, loadSettings, parseProbe, platformFor, probeScript, runnerHealth, saveSettings, select, serviceScript, shell, type GitHubRunner, type LocalRunner, type Row, type Snapshot } from '../src/woreda.ts'
 import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -17,7 +17,7 @@ describe('runner discovery and health', () => {
         expect(result.runners).toEqual([local]); expect(result.arch).toBe('arm64')
         expect(probeScript()).not.toContain('.credentials')
     })
-    test('invalid SSH probes fail rather than report healthy', () => { expect(() => parseProbe('unauthorized')).toThrow('valid runnerwatch probe') })
+    test('invalid SSH probes fail rather than report healthy', () => { expect(() => parseProbe('unauthorized')).toThrow('valid woreda probe') })
     test('GitHub online alone is distinct from managed service health', () => {
         expect(runnerHealth(github, local)).toBe('idle')
         expect(runnerHealth({ ...github, busy: true }, local)).toBe('busy')
@@ -68,8 +68,23 @@ describe('lifecycle safety', () => {
         expect(labelList('darwin-x64,studio,studio')).toEqual(['darwin-x64', 'studio'])
         expect(() => labelList('studio,$(malicious)')).toThrow()
     })
+    test('the rename preserves legacy configuration until a new config exists', async () => {
+        const home = await mkdtemp(join(tmpdir(), 'woreda-rename-'))
+        const current = join(home, '.config', 'woreda', 'config.json')
+        const legacy = join(home, '.config', 'runnerwatch', 'config.json')
+        const settings = { schema: 1 as const, hosts: {}, scopes: [], registrations: {} }
+        try {
+            expect(defaultConfigPath(home)).toBe(current)
+            await saveSettings(settings, legacy)
+            expect(defaultConfigPath(home)).toBe(legacy)
+            await saveSettings(settings, current)
+            expect(defaultConfigPath(home)).toBe(current)
+            expect(probeScript()).toContain('/.local/share/runnerwatch/runners/*')
+            expect(probeScript()).toContain('/.local/share/woreda/runners/*')
+        } finally { await rm(home, { recursive: true }) }
+    })
     test('config is atomic, private, and rejects SSH options', async () => {
-        const directory = await mkdtemp(join(tmpdir(), 'runnerwatch-test-')), path = join(directory, 'config.json')
+        const directory = await mkdtemp(join(tmpdir(), 'woreda-test-')), path = join(directory, 'config.json')
         try {
             expect(await loadSettings(path)).toEqual({ schema: 1, hosts: {}, scopes: [], registrations: {} })
             await saveSettings({ schema: 1, hosts: { bugsy: { ssh: 'sami@bugsy', directories: [] } }, scopes: ['tana3d'], registrations: {} }, path)
@@ -83,11 +98,11 @@ describe('lifecycle safety', () => {
 })
 describe('CLI contract', () => {
     test('help comes from commands, including lifecycle actions', async () => {
-        const help = JSON.parse(await execute(['bun', 'src/runnerwatch.ts', '--help']))
+        const help = JSON.parse(await execute(['bun', 'src/woreda.ts', '--help']))
         expect(help.commands.map((command: { name: string }) => command.name)).toContain('init')
         expect(help.commands.map((command: { name: string }) => command.name)).toContain('remove')
     })
     test('noninteractive init needs machine/scope flags', async () => {
-        await expect(execute(['bun', 'src/runnerwatch.ts', '--config', '/tmp/runnerwatch-nonexistent-test.json', 'init'])).rejects.toThrow('Noninteractive setup')
+        await expect(execute(['bun', 'src/woreda.ts', '--config', '/tmp/woreda-nonexistent-test.json', 'init'])).rejects.toThrow('Noninteractive setup')
     })
 })

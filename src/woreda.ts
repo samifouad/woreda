@@ -5,6 +5,7 @@ import inquirer from 'inquirer'
 import { z } from 'zod'
 import { chmod, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
+import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import pkg from '../package.json'
 
@@ -28,7 +29,13 @@ const sensitive = new Set<string>()
 export const shell = (value: string) => `'${value.replaceAll("'", "'\\''")}'`
 export function redact(value: string) { for (const secret of sensitive) if (secret) value = value.replaceAll(secret, '[redacted]'); return value }
 export const endpoint = (scope: string) => `${scope.includes('/') ? 'repos' : 'orgs'}/${scopeSchema.parse(scope)}/actions`
-const configPath = () => program.opts<Globals>().config ?? join(homedir(), '.config', 'runnerwatch', 'config.json')
+export const defaultConfigPath = (home = homedir()) => {
+    const current = join(home, '.config', 'woreda', 'config.json')
+    const legacy = join(home, '.config', 'runnerwatch', 'config.json')
+    return !existsSync(current) && existsSync(legacy) ? legacy : current
+}
+const configPath = () => program.opts<Globals>().config ?? defaultConfigPath()
+
 export async function loadSettings(path = configPath()): Promise<Settings> {
     try { return configSchema.parse(JSON.parse(await readFile(path, 'utf8'))) }
     catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { schema: 1, hosts: {}, scopes: [], registrations: {} }; throw error }
@@ -87,7 +94,7 @@ if [ "$os" = Linux ]; then
  command -v systemctl >/dev/null 2>&1 || printf 'RW_MISSING\\tsystemctl\\n'
  sudo -n true 2>/dev/null || printf 'RW_MISSING\\tpasswordless-sudo\\n'
 fi
-for directory in "$HOME"/actions-runner* "$HOME"/.local/share/runnerwatch/runners/* ${directories.map(shell).join(' ')}; do
+for directory in "$HOME"/actions-runner* "$HOME"/.local/share/woreda/runners/* "$HOME"/.local/share/runnerwatch/runners/* ${directories.map(shell).join(' ')}; do
  [ -f "$directory/.runner" ] || continue
  unit=''; [ ! -f "$directory/.service" ] || unit=$(cat "$directory/.service")
  installed=0
@@ -127,7 +134,7 @@ export function parseProbe(text: string): Machine {
         const state = fields[2]!, pid = Number(fields[3]) || null
         machine.runners.push({ scope, name: metadata.agentName, id: metadata.agentId, directory, unit: decode(fields[1]!), state, pid, active: (state === 'running' || state === 'active') && pid !== null })
     }
-    if (!machine.os || !machine.home) throw Error('The SSH host did not return a valid runnerwatch probe.')
+    if (!machine.os || !machine.home) throw Error('The SSH host did not return a valid woreda probe.')
     return machine
 }
 export const probe = async (host: Host) => parseProbe(await remote(host, probeScript(host.directories)))
@@ -224,7 +231,7 @@ async function archiveFor(machine: Machine, version?: string): Promise<Archive> 
 }
 export function downloadScript(archive: Archive): string {
     if (!/^[a-f0-9]{64}$/.test(archive.sha256)) throw Error('Invalid archive checksum.')
-    return `archive=$(mktemp -d "\${TMPDIR:-/tmp}/runnerwatch.XXXXXX")
+    return `archive=$(mktemp -d "\${TMPDIR:-/tmp}/woreda.XXXXXX")
 trap 'rm -rf "$archive"' EXIT HUP INT TERM
 curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 ${shell(archive.url)} -o "$archive/runner.tar.gz"
 if command -v shasum >/dev/null 2>&1; then sum=$(shasum -a 256 "$archive/runner.tar.gz" | awk '{print $1}'); else sum=$(sha256sum "$archive/runner.tar.gz" | awk '{print $1}'); fi
@@ -256,7 +263,7 @@ async function ensureGroup(scope: string, options: AddOptions, registered?: GitH
         if (existing.inherited) throw Error('An inherited runner group cannot be managed at organization scope.')
         if (ids.length) {
             const allowed = await pages<{ id: number }>(`orgs/${scope}/actions/runner-groups/${existing.id}/repositories`, 'repositories')
-            if (ids.some(id => !allowed.some(repo => repo.id === id))) throw Error('The existing group does not allow all selected repositories. Change access explicitly in GitHub; runnerwatch will not silently broaden it.')
+            if (ids.some(id => !allowed.some(repo => repo.id === id))) throw Error('The existing group does not allow all selected repositories. Change access explicitly in GitHub; woreda will not silently broaden it.')
         }
         if (publicRepo && !existing.allows_public_repositories) throw Error('This existing group does not allow public repositories.')
         if (registered) {
@@ -285,11 +292,11 @@ async function guided(settings: Settings, options: AddOptions): Promise<AddOptio
         const choice = (await inquirer.prompt([{ type: 'select', name: 'group', message: 'Runner access group:', choices: [...groups.filter(group => !group.inherited).map(group => ({ name: group.name, value: group.name })), { name: 'Create a group restricted to selected repositories', value: '__new' }] }])).group
         if (choice !== '__new') options.group = choice
         else {
-            const answers = await inquirer.prompt([{ name: 'group', message: 'New group name:', default: 'runnerwatch' }, { name: 'repos', message: 'Allowed repositories, comma separated (org/repo):' }, { type: 'confirm', name: 'allowPublic', message: 'Allow public repositories? Route only trusted workflows to persistent hosts.', default: false }])
+            const answers = await inquirer.prompt([{ name: 'group', message: 'New group name:', default: 'woreda' }, { name: 'repos', message: 'Allowed repositories, comma separated (org/repo):' }, { type: 'confirm', name: 'allowPublic', message: 'Allow public repositories? Route only trusted workflows to persistent hosts.', default: false }])
             Object.assign(options, answers)
         }
     }
-    if (options.labels === undefined) options.labels = (await inquirer.prompt([{ name: 'labels', message: 'Custom labels, comma separated:', default: 'runnerwatch' }])).labels
+    if (options.labels === undefined) options.labels = (await inquirer.prompt([{ name: 'labels', message: 'Custom labels, comma separated:', default: 'woreda' }])).labels
     const machine = await probe(settings.hosts[options.host!]!)
     if (machine.os === 'Linux' && options.installDependencies === undefined) options.installDependencies = (await inquirer.prompt([{ type: 'confirm', name: 'install', message: 'Install runner OS dependencies with GitHub’s dependency script and sudo?', default: true }])).install
     return options
@@ -310,10 +317,10 @@ async function addRunner(raw: AddOptions) {
     const host = settings.hosts[hostName]
     if (!host) throw Error('Add this SSH machine with hosts add first.')
     const probeHost = options.directory ? { ...host, directories: [...host.directories, directorySchema.parse(options.directory)] } : host
-    const machine = await probe(probeHost), archive = await archiveFor(machine, options.version), labels = labelList(options.labels ?? 'runnerwatch')
+    const machine = await probe(probeHost), archive = await archiveFor(machine, options.version), labels = labelList(options.labels ?? 'woreda')
     if (machine.user === 'root') throw Error('Use a non-root SSH account for runner installation.')
     if (machine.prerequisites.length) throw Error(`Host prerequisites missing: ${machine.prerequisites.join(', ')}. Fix SSH tools/passwordless sudo before registration.`)
-    const directory = options.directory ? directorySchema.parse(options.directory) : `${machine.home}/.local/share/runnerwatch/runners/${scope.replace('/', '--')}--${name}`
+    const directory = options.directory ? directorySchema.parse(options.directory) : `${machine.home}/.local/share/woreda/runners/${scope.replace('/', '--')}--${name}`
     if (directory === machine.home || machine.home.startsWith(directory + '/')) throw Error('Use a dedicated runner subdirectory, not the home directory or its ancestors.')
     const entries = await listRunners(scope), registered = entries.find(entry => entry.name === name)
     const local = machine.runners.find(runner => runner.directory === directory || (runner.scope === scope && runner.name === name))
@@ -330,11 +337,11 @@ async function addRunner(raw: AddOptions) {
 umask 077
 RW_TOKEN=${shell(token)}
 directory=${shell(directory)}
-if [ -e "$directory" ] && [ ! -f "$directory/.runner" ] && [ ! -f "$directory/.runnerwatch-managed" ] && [ -n "$(ls -A "$directory")" ]; then echo 'Refusing to overwrite a nonempty unmanaged directory' >&2; exit 1; fi
+if [ -e "$directory" ] && [ ! -f "$directory/.runner" ] && [ ! -f "$directory/.woreda-managed" ] && [ ! -f "$directory/.runnerwatch-managed" ] && [ -n "$(ls -A "$directory")" ]; then echo 'Refusing to overwrite a nonempty unmanaged directory' >&2; exit 1; fi
 mkdir -p "$directory"
 cd "$directory"
 if [ ! -f .runner ]; then
- touch .runnerwatch-managed
+ touch .woreda-managed
  ${downloadScript(archive)}
  tar -xzf "$archive/runner.tar.gz" -C "$directory"
  ${machine.os === 'Linux' && options.installDependencies ? 'sudo -n ./bin/installdependencies.sh' : ':'}
@@ -414,7 +421,7 @@ async function removeRunner(selector: string, options: { yes?: boolean; force?: 
     if (!options.force && registered?.busy) throw Error('Runner has an active job. --force deliberately interrupts it.')
     await confirmRemoval(`Stop and unregister ${selector}${options.purge ? ', deleting its managed files' : ', retaining its files'}?`, options.yes)
     const host = settings.hosts[runner.host]!, directory = runner.service.directory
-    if (options.purge) await remote(host, `set -eu\n[ -f ${shell(`${directory}/.runnerwatch-managed`)} ] || { echo 'Purge is only allowed for directories created by runnerwatch' >&2; exit 1; }\n`)
+    if (options.purge) await remote(host, `set -eu\n{ [ -f ${shell(`${directory}/.woreda-managed`)} ] || [ -f ${shell(`${directory}/.runnerwatch-managed`)} ]; } || { echo 'Purge is only allowed for directories created by woreda' >&2; exit 1; }\n`)
     const token = registered ? (await gh<{ token: string }>(`${endpoint(runner.scope)}/runners/remove-token`, 'POST')).token : ''
     sensitive.add(token)
     if (runner.service.unit && runner.service.state !== 'not-installed') await remote(host, serviceScript(directory, ['uninstall'], machine.os, machine.user), 60_000)
@@ -422,7 +429,7 @@ async function removeRunner(selector: string, options: { yes?: boolean; force?: 
     await remote(host, `set -eu\ncd ${shell(directory)}\nRW_TOKEN=${shell(token)}\n${registered ? './config.sh remove --unattended --token "$RW_TOKEN" >/dev/null' : './config.sh remove --local >/dev/null'}\n`, 60_000)
     if ((await listRunners(runner.scope)).some(entry => entry.id === runner.service.id)) throw Error('GitHub still lists the runner after removal.')
     if ((await probe(host)).runners.some(entry => entry.directory === directory)) throw Error('Local registration remains after removal.')
-    if (options.purge) await remote(host, `set -eu\n[ -f ${shell(`${directory}/.runnerwatch-managed`)} ]\nrm -rf -- ${shell(directory)}\n`)
+    if (options.purge) await remote(host, `set -eu\n[ -f ${shell(`${directory}/.woreda-managed`)} ] || [ -f ${shell(`${directory}/.runnerwatch-managed`)} ]\nrm -rf -- ${shell(directory)}\n`)
     delete settings.registrations[selector]
     host.directories = host.directories.filter(path => path !== directory)
     await saveSettings(settings)
@@ -461,7 +468,7 @@ export function table(data: Snapshot) {
 function integer(name: string, min: number, max: number) {
     return (raw: string) => { const value = Number(raw); if (!Number.isInteger(value) || value < min || value > max) throw new InvalidArgumentError(`${name} must be between ${min} and ${max}.`); return value }
 }
-export const program = new Command().name('runnerwatch').version(pkg.version).description('Manage GitHub Actions self-hosted runners from setup to retirement')
+export const program = new Command().name('woreda').version(pkg.version).description('Manage GitHub Actions self-hosted runners from setup to retirement')
     .option('--config <path>', 'use a different config file')
     .option('--human', 'readable output for people')
     .option('--json', 'JSON output (the default; overrides --human)')
@@ -476,7 +483,7 @@ function action<A extends unknown[]>(run: (...args: A) => Promise<unknown>) {
     }
 }
 function addOptions(command: Command) {
-    return command.option('--host <name>', 'configured SSH machine').option('--scope <org-or-repo>', 'GitHub org or owner/repo').option('--name <name>', 'runner name (default machine name)').option('--labels <csv>', 'custom labels (default runnerwatch)').option('--group <name>', 'organization access group').option('--repos <csv>', 'selected repositories for a new group').option('--allow-public', 'allow public repositories in a new selected group').option('--install-dependencies', 'install Linux runner dependencies with sudo').option('--no-install-dependencies', 'keep existing Linux OS dependencies').option('--directory <path>', 'absolute remote runner directory').option('--version <version>', 'official runner version (default latest)').option('--dry-run', 'inspect and plan without tokens or runner/group changes')
+    return command.option('--host <name>', 'configured SSH machine').option('--scope <org-or-repo>', 'GitHub org or owner/repo').option('--name <name>', 'runner name (default machine name)').option('--labels <csv>', 'custom labels (default woreda)').option('--group <name>', 'organization access group').option('--repos <csv>', 'selected repositories for a new group').option('--allow-public', 'allow public repositories in a new selected group').option('--install-dependencies', 'install Linux runner dependencies with sudo').option('--no-install-dependencies', 'keep existing Linux OS dependencies').option('--directory <path>', 'absolute remote runner directory').option('--version <version>', 'official runner version (default latest)').option('--dry-run', 'inspect and plan without tokens or runner/group changes')
 }
 addOptions(program.command('init').description('guided first-machine and runner setup')).action(action(addRunner))
 addOptions(program.command('add').description('install, register, start and verify a runner; safe to retry')).action(action(addRunner))
@@ -506,7 +513,7 @@ program.command('doctor').description('check runner health; nonzero exit if mana
 program.command('watch').description('live terminal dashboard').option('--interval <seconds>', 'refresh interval', integer('Interval', 2, 3600), 15).option('--once', 'one dashboard snapshot').action(action(async (options: { interval: number; once?: boolean }) => {
     do {
         const data = await snapshot(await loadSettings())
-        if (process.stdout.isTTY) { process.stdout.write('\x1b[2J\x1b[H'); console.log(`Runnerwatch · ${new Date().toLocaleString()}\n${table(data)}`) } else output(data)
+        if (process.stdout.isTTY) { process.stdout.write('\x1b[2J\x1b[H'); console.log(`Woreda · ${new Date().toLocaleString()}\n${table(data)}`) } else output(data)
         if (options.once) break
         await Bun.sleep(options.interval * 1000)
     } while (true)
@@ -515,7 +522,7 @@ for (const verb of ['start', 'stop', 'restart'] as const) program.command(verb).
 program.command('repair').argument('<runner>').description('restore a missing/stopped/disconnected service and verify connection').option('--force', 'allow interruption of an active job').action(action((selector: string, options: { force?: boolean }) => repairRunner(selector, options.force)))
 program.command('update').argument('<runner>').description('verify and install the latest runner SDK, then reconnect').option('--version <version>', 'specific SDK version').option('--dry-run', 'show proposed version change').option('--force', 'allow interruption of busy/uncertain runner').action(action(updateRunner))
 program.command('labels').argument('<runner>').requiredOption('--set <csv>', 'replace custom labels; automatic OS/architecture labels stay').description('manage workflow routing labels').action(action((selector: string, options: { set: string }) => setLabels(selector, options.set)))
-program.command('remove').argument('<runner>').description('stop service and unregister from GitHub; keep files by default').option('--yes', 'confirm removal without prompting').option('--force', 'allow interruption of an active job').option('--purge', 'delete files created by runnerwatch after successful removal').option('--github-only', 'revoke registration only; remote service/files remain').action(action(removeRunner))
+program.command('remove').argument('<runner>').description('stop service and unregister from GitHub; keep files by default').option('--yes', 'confirm removal without prompting').option('--force', 'allow interruption of an active job').option('--purge', 'delete files created by woreda after successful removal').option('--github-only', 'revoke registration only; remote service/files remain').action(action(removeRunner))
 program.command('logs').argument('<runner>').description('stream a selected SDK or job log (plain text)').option('--lines <count>', 'recent lines', integer('Lines', 1, 10000), 60).option('--follow', 'follow appended logs').option('--jobs', 'worker job log instead of runner log').action(action(logs))
 program.command('jobs').argument('<owner/repo>').description('recent workflow runs and links').option('--limit <count>', 'number of runs', integer('Limit', 1, 100), 5).action(action((scope: string, options: { limit: number }) => jobs(scope, options.limit)))
 program.command('groups').argument('<org>').description('list organization runner access groups').action(action((scope: string) => { identifier.parse(scope); return pages<Group>(`orgs/${scope}/actions/runner-groups`, 'runner_groups') }))

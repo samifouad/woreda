@@ -1,17 +1,18 @@
-# Runnerwatch
+# Woreda
 
 **GitHub Actions self-hosting.** Set up your own runners, see whether they're working, and manage them from your terminal.
 
 ## Get started
 
-Download a standalone executable from [Releases](https://github.com/samifouad/runnerwatch/releases), make it executable, and put it on your PATH. It does not need Bun.
-
-Install the [GitHub CLI](https://cli.github.com/), then:
+Install [Bun](https://bun.sh) and the [GitHub CLI](https://cli.github.com/), then:
 
 ```sh
+npm install -g woreda
 gh auth login
-runnerwatch init --human
+woreda init --human
 ```
+
+Version 6 is the new runner management CLI; earlier npm releases were a different project. Version 6 is prepared here and will be available after publishing. The previous Runnerwatch [standalone downloads](https://github.com/samifouad/woreda/releases) are available now and do not need Bun.
 
 The setup wizard asks which machine to connect to and which GitHub repository or organization it should work for. For example: `sami@bugsy` and `tana3d/studio`. It installs GitHub's runner, starts the service, and checks that GitHub sees it online.
 
@@ -22,26 +23,26 @@ Your machine needs to be reachable over SSH first. macOS and Linux runners are s
 Show each runner and whether it's idle, busy or stopped:
 
 ```sh
-runnerwatch status --human
+woreda status --human
 ```
 
 Keep a live dashboard open:
 
 ```sh
-runnerwatch watch
+woreda watch
 ```
 
 Check for problems:
 
 ```sh
-runnerwatch doctor --human
+woreda doctor --human
 ```
 
 ## Add a machine that already has runners
 
 ```sh
-runnerwatch hosts add bugsy --ssh sami@bugsy
-runnerwatch status --human
+woreda hosts add bugsy --ssh sami@bugsy
+woreda status --human
 ```
 
 Existing installations in `~/actions-runner*` are discovered automatically. Adding a machine here does not create a new runner.
@@ -51,35 +52,35 @@ Existing installations in `~/actions-runner*` are discovered automatically. Addi
 Use the wizard again:
 
 ```sh
-runnerwatch add --human
+woreda add --human
 ```
 
 Or tell it exactly what to set up. This adds a machine called `builder`, then registers it for one repository:
 
 ```sh
-runnerwatch hosts add builder --ssh sami@builder
-runnerwatch add --host builder --scope tana3d/studio --name builder --labels studio --install-dependencies
+woreda hosts add builder --ssh sami@builder
+woreda add --host builder --scope tana3d/studio --name builder --labels studio --install-dependencies
 ```
 
 ## Inspect a job or restart a runner
 
 ```sh
-runnerwatch jobs tana3d/studio --human
-runnerwatch logs tana3d/studio/builder --lines 50
-runnerwatch restart tana3d/studio/builder --human
+woreda jobs tana3d/studio --human
+woreda logs tana3d/studio/builder --lines 50
+woreda restart tana3d/studio/builder --human
 ```
 
-Copy the runner name from `runnerwatch status` when using logs, restart, update or removal. Repository runners use `owner/repo/runner`; organization runners use `org/runner`. Runnerwatch refuses to interrupt a busy runner by default.
+Copy the runner name from `woreda status` when using logs, restart, update or removal. Repository runners use `owner/repo/runner`; organization runners use `org/runner`. Woreda refuses to interrupt a busy runner by default.
 
 ## Update, repair or remove
 
 ```sh
-runnerwatch update tana3d/studio/builder --human
-runnerwatch repair tana3d/studio/builder --human
-runnerwatch remove tana3d/studio/builder --yes
+woreda update tana3d/studio/builder --human
+woreda repair tana3d/studio/builder --human
+woreda remove tana3d/studio/builder --yes
 ```
 
-Removal unregisters the runner and removes its service, keeping its files. Add `--purge` to delete an installation created by Runnerwatch too.
+Removal unregisters the runner and removes its service, keeping its files. Add `--purge` to delete an installation created by Woreda too.
 
 ## More details
 
@@ -94,4 +95,6 @@ bun test
 bun run build
 ```
 
-The CLI lives in one TypeScript file, `src/runnerwatch.ts`. Standalone releases include the runtime. No dashboard server or separate database is needed.
+The CLI lives in one TypeScript file, `src/woreda.ts`. Standalone releases include the runtime. No dashboard server or separate database is needed.
+
+For releases, see [npm publishing](docs/publishing.md).

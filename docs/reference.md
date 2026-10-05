@@ -1,4 +1,4 @@
-# Runnerwatch
+# Woreda
 
 A Bun/TypeScript CLI for the whole lifecycle of GitHub Actions self-hosted runners:
 add a machine, install and register runners, monitor real service health, inspect
@@ -11,17 +11,17 @@ No dashboard server, remote Bun/Python installation, or separate runner database
 
 ## Install
 
-Download an executable from [Releases](https://github.com/samifouad/runnerwatch/releases),
+Download an executable from [Releases](https://github.com/samifouad/woreda/releases),
 make it executable, and put it on your PATH. The compiled executable does not need Bun.
 Or use the source:
 
 ```sh
 bun install
-bun src/runnerwatch.ts --help
+bun src/woreda.ts --help
 bun run build darwin-arm64  # choose your controller’s platform
 mkdir -p "$HOME/.local/bin"
-install -m 755 dist/runnerwatch-darwin-arm64 "$HOME/.local/bin/runnerwatch"
-runnerwatch --version
+install -m 755 dist/woreda-darwin-arm64 "$HOME/.local/bin/woreda"
+woreda --version
 ```
 
 The controller needs [GitHub CLI](https://cli.github.com/) authenticated with
@@ -41,7 +41,7 @@ and project-specific build tools are prerequisites, not silently installed.
 ## From a new machine to an online runner
 
 ```sh
-runnerwatch init --human
+woreda init --human
 ```
 
 The wizard asks for SSH address, GitHub organization/repository, runner name,
@@ -54,22 +54,22 @@ partial failure; it never replaces another installation with the same name.
 For scripts or agents, provide the choices explicitly:
 
 ```sh
-runnerwatch hosts add builder --ssh sami@builder
-runnerwatch add --host builder --scope samifouad/runnerwatch --name builder \
-  --labels runnerwatch,release --install-dependencies
+woreda hosts add builder --ssh sami@builder
+woreda add --host builder --scope samifouad/woreda --name builder \
+  --labels woreda,release --install-dependencies
 ```
 
 Organization runners use selected repository access rather than an unrestricted
 new group:
 
 ```sh
-runnerwatch add --host builder --scope tana3d --name builder \
+woreda add --host builder --scope tana3d --name builder \
   --group studio-releases --repos tana3d/studio --allow-public \
   --labels studio,release --install-dependencies
 ```
 
 An existing group is reused. Requested repositories must already be allowed in
-that group; Runnerwatch does not silently broaden existing access. New groups
+that group; Woreda does not silently broaden existing access. New groups
 need `--repos`; public repository access requires `--allow-public`. Route only
 trusted workflows to persistent machines. Pull requests from forks must not run
 arbitrary code on these hosts.
@@ -77,21 +77,21 @@ arbitrary code on these hosts.
 Use `add ... --dry-run` to inspect the proposed installation without registering,
 downloading, or changing access groups. `--version 2.337.0` pins an official SDK
 version. `--directory /absolute/path` chooses its installation location. Default:
-`~/.local/share/runnerwatch/runners/<scope>--<runner>`.
+`~/.local/share/woreda/runners/<scope>--<runner>`.
 
 ## Everyday use
 
 ```sh
-runnerwatch status --human
-runnerwatch watch
-runnerwatch doctor --human
-runnerwatch jobs tana3d/studio
-runnerwatch logs tana3d/builder --lines 50
-runnerwatch logs tana3d/builder --jobs --follow
-runnerwatch restart tana3d/builder
-runnerwatch labels tana3d/builder --set studio,release,darwin-x64
-runnerwatch update tana3d/builder
-runnerwatch repair tana3d/builder
+woreda status --human
+woreda watch
+woreda doctor --human
+woreda jobs tana3d/studio
+woreda logs tana3d/builder --lines 50
+woreda logs tana3d/builder --jobs --follow
+woreda restart tana3d/builder
+woreda labels tana3d/builder --set studio,release,darwin-x64
+woreda update tana3d/builder
+woreda repair tana3d/builder
 ```
 
 `status` joins GitHub registration/connectivity with launchd/systemd state and PID.
@@ -114,14 +114,14 @@ an Intel build target and package Intel dependencies.
 ## Retirement
 
 ```sh
-runnerwatch remove tana3d/builder --yes
-runnerwatch remove tana3d/another-builder --yes --purge
-runnerwatch hosts remove builder --yes
+woreda remove tana3d/builder --yes
+woreda remove tana3d/another-builder --yes --purge
+woreda hosts remove builder --yes
 ```
 
 Removal stops/uninstalls the selected service and unregisters from GitHub, then
 verifies both sides. Files are retained by default. `--purge` deletes only an
-installation marked as created by Runnerwatch, after successful unregistering.
+installation marked as created by Woreda, after successful unregistering.
 Removing a machine’s config refuses to abandon remaining runner installations.
 Busy workers require `--force`; noninteractive destructive actions require `--yes`.
 If the machine cannot be reached, no remote cleanup is claimed; restore SSH access
@@ -132,7 +132,7 @@ unregister anything. Other organizations’ services on the same machine are unt
 
 ## Configuration and credentials
 
-Configuration is private JSON at `~/.config/runnerwatch/config.json`; `--config`
+Configuration is private JSON at `~/.config/woreda/config.json`. Existing Runnerwatch users continue using `~/.config/runnerwatch/config.json` until a Woreda config exists. Legacy runner directories and managed markers remain supported. `--config`
 selects another file. It contains host addresses and installation mappings, not
 tokens. Existing `~/actions-runner*` installations are discovered automatically.
 Explicit custom roots can be added under each host’s `directories`:
@@ -151,7 +151,7 @@ Explicit custom roots can be added under each host’s `directories`:
 
 GitHub authentication remains in the controller’s `gh` credential store. Only
 short-lived SDK registration/removal tokens travel over SSH; they are never saved
-in Runnerwatch config or printed. GitHub’s SDK manages its own credentials on the
+in Woreda config or printed. GitHub’s SDK manages its own credentials on the
 runner host. Metadata probes never read those credential files. SDK diagnostic
 logs can contain operational information, so treat `logs` output accordingly.
 
@@ -164,7 +164,7 @@ bun test
 bun run build
 ```
 
-`src/runnerwatch.ts` contains the CLI and exported operations. Builds produce
+`src/woreda.ts` contains the CLI and exported operations. Builds produce
 standalone macOS ARM64/Intel and Linux ARM64/x64 executables in `dist/`. To build
 just one: `bun run build darwin-arm64`.
 

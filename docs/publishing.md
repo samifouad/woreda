@@ -19,7 +19,7 @@ git tag -s v6.0.0 -m 'Woreda v6.0.0'
 git push origin v6.0.0
 ```
 
-Type checking, tests and a packed installation smoke test must pass before publishing. Failed jobs can be retried through GitHub's rerun controls.
+Type checking, tests and a packed installation smoke test must pass before publishing. Failed jobs can be retried through GitHub's rerun controls. A manual dispatch from `main` can publish the current package version after fixing CI; npm refuses to overwrite an already published version.
 
 npm's [trusted publishing](https://docs.npmjs.com/trusted-publishers/) currently requires a GitHub-hosted runner. If GitHub blocks hosted jobs for the account, publishing cannot complete until that restriction is resolved. Local publishing remains possible after `npm login`:
 

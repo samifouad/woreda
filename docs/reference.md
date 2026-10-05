@@ -6,7 +6,7 @@ jobs and logs, manage labels, update or repair services, and remove registration
 
 One TypeScript entry point compiles into a standalone executable. Uses Zega CLI’s
 stack and conventions: Bun, Commander commands, Inquirer setup prompts, Zod input
-validation, JSON by default, `--human` for people, and nonzero exit codes on failure.
+validation, JSON by default (coloured and indented in terminals, compact in pipes), `--human` for readable help and command output, `--nopretty` for compact JSON everywhere, and nonzero exit codes on failure.
 No dashboard server, remote Bun/Python installation, or separate runner database.
 
 ## Install

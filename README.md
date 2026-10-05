@@ -84,7 +84,16 @@ Removal unregisters the runner and removes its service, keeping its files. Add `
 
 ## More details
 
-Output is JSON by default; add `--human` for readable status. The detailed [reference](docs/reference.md) covers access groups, labels, configuration, credentials, custom folders and recovery.
+Output is JSON by default: coloured and indented in a terminal, compact when piped or saved to a file. Use `--human` for readable help, tables and text. `--json` overrides `--human`; `--nopretty` forces compact, uncoloured JSON.
+
+```sh
+woreda --human                   # readable help with a yellow banner in a terminal
+woreda hosts list                # pretty JSON in a terminal
+woreda hosts list > hosts.json   # compact JSON in a file
+woreda hosts list --nopretty      # compact JSON everywhere
+```
+
+Help stays indented when piped unless `--nopretty` is supplied. Banners appear only in terminals and are omitted with `--json` or `--nopretty`. JSON watch output is one compact snapshot per line. The detailed [reference](docs/reference.md) covers access groups, labels, configuration, credentials, custom folders and recovery.
 
 To develop locally:
 

@@ -1,6 +1,6 @@
 {
   "name": "woreda",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "description": "GitHub Actions self-hosting: set up, monitor and manage runners over SSH.",
   "type": "module",
   "module": "src/woreda.ts",
@@ -18,6 +18,7 @@
     "build": "bun scripts/build-all.ts"
   },
   "dependencies": {
+    "chalk": "6.0.1",
     "commander": "15.0.0",
     "inquirer": "14.2.2",
     "zod": "4.6.5"

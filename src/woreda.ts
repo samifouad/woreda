@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 /** One Bun/TypeScript entry point, also compiled into a standalone executable. */
-import { Command, InvalidArgumentError } from 'commander'
+import { Command, Help, InvalidArgumentError } from 'commander'
+import chalk, { Chalk } from 'chalk'
 import inquirer from 'inquirer'
 import { z } from 'zod'
 import { chmod, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
@@ -451,14 +452,75 @@ async function jobs(scope: string, limit: number) {
     const result = await gh<{ workflow_runs: { id: number; name: string; status: string; conclusion: string | null; html_url: string }[] }>(`repos/${scope}/actions/runs?per_page=${limit}`)
     return result.workflow_runs.map(run => ({ id: run.id, name: run.name, status: run.status, conclusion: run.conclusion, url: run.html_url }))
 }
-function progress(message: string) { if (process.stderr.isTTY || program.opts<Globals>().human) console.error(message) }
-function output(value: unknown) {
-    const options = program.opts<Globals>()
-    if (options.human && !options.json) {
-        if (value && typeof value === 'object' && 'runners' in value && 'hosts' in value) { console.log(table(value as Snapshot)); return }
-        console.log(typeof value === 'string' ? value : JSON.stringify(value, null, 2)); return
+// Same JSON token colours and terminal policy as Zega's CLI.
+export function paintJson(text: string): string {
+    return text.replace(/("(?:[^"\\]|\\.)*")(\s*:)?|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null|[{}[\],:]/g,
+        (found: string, string: string | undefined, colon: string | undefined) => {
+            if (string !== undefined) return colon === undefined ? chalk.green(string) : chalk.cyan(string) + chalk.dim(colon)
+            return /^[{}[\],:]$/.test(found) ? chalk.dim(found) : chalk.yellow(found)
+        })
+}
+export function formatJson(value: unknown, options: { stream: 'stdout' | 'stderr'; nopretty?: boolean; always?: boolean }): string {
+    const terminal = process[options.stream].isTTY === true && options.nopretty !== true
+    // Help is indented even when piped; an explicit --nopretty still wins.
+    if (options.nopretty || (!terminal && !options.always)) return JSON.stringify(value) + '\n'
+    const text = JSON.stringify(value, null, 2)
+    return (terminal ? paintJson(text) : text) + '\n'
+}
+const modes = (): { human: boolean; nopretty: boolean; json: boolean } => {
+    const options = program.opts<Globals>(), argv = process.argv.slice(2)
+    return { human: (options.human || argv.includes('--human')) && !(options.json || argv.includes('--json')), nopretty: options.nopretty || argv.includes('--nopretty'), json: options.json || argv.includes('--json') }
+}
+// Zega's five-row Cfh 3 block lettering, with yellow body and a darker shaded edge.
+const MARK = {
+    W: ['▐██   ▐██', '▐██   ▐██', '▐██▐█ ▐██', '▐██▐█▐██ ', '▐██▐██▐██'],
+    O: ['▐██████', '▐██ ▐██', '▐██ ▐██', '▐██ ▐██', '▐██████'],
+    R: ['▐██████', '▐██ ▐██', '▐█████ ', '▐██ ▐██', '▐██ ▐██'],
+    E: ['▐██████', '▐██    ', '▐████  ', '▐██    ', '▐██████'],
+    D: ['▐█████ ', '▐██ ▐██', '▐██ ▐██', '▐██ ▐██', '▐█████ '],
+    A: ['▐██████', '▐██ ▐██', '▐██████', '▐██ ▐██', '▐██ ▐██'],
+}
+export function logo(color?: boolean): string {
+    const paint = color === undefined ? chalk : new Chalk({ level: color ? 3 : 0 })
+    const main = paint.level >= 3 ? paint.hex('#FFFF55') : paint.yellowBright
+    const shade = paint.level >= 3 ? paint.hex('#AA8800') : paint.yellow
+    return Array.from({ length: 5 }, (_, row) => '  ' + Object.values(MARK).map(glyph => glyph[row]).join('')
+        .replace(/█+|▐+/g, run => run.startsWith('█') ? main(run) : shade(run))).join('\n')
+}
+const label = (key: string) => key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, letter => letter.toUpperCase())
+const cell = (value: unknown): string => value === null || value === undefined ? '—' : typeof value === 'boolean' ? value ? 'yes' : 'no' : Array.isArray(value) ? value.map(cell).join(', ') || 'none' : String(value)
+export function humanText(value: unknown, indent = ''): string {
+    if (Array.isArray(value)) {
+        if (!value.length) return indent + 'No entries.'
+        if (value.every(item => item !== null && typeof item === 'object' && !Array.isArray(item))) {
+            const objects = value as Record<string, unknown>[]
+            const keys = [...new Set(objects.flatMap(object => Object.keys(object)))]
+            const rows = [keys.map(key => label(key).toUpperCase()), ...objects.map(object => keys.map(key => cell(object[key])))]
+            const widths = keys.map((_, index) => Math.max(...rows.map(row => row[index]!.length)))
+            return rows.map(row => indent + row.map((entry, index) => entry.padEnd(widths[index]!)).join('  ').trimEnd()).join('\n')
+        }
+        return value.map(item => indent + '• ' + cell(item)).join('\n')
     }
-    console.log(JSON.stringify(value, null, options.nopretty ? undefined : 2))
+    if (value !== null && typeof value === 'object') {
+        const entries = Object.entries(value)
+        if (!entries.length) return indent + 'No entries.'
+        return entries.map(([key, item]) => item !== null && typeof item === 'object' && (!Array.isArray(item) || item.some(entry => typeof entry === 'object'))
+            ? indent + label(key) + ':\n' + humanText(item, indent + '  ')
+            : indent + label(key) + ': ' + cell(item)).join('\n')
+    }
+    return indent + cell(value)
+}
+function progress(message: string) { if (process.stderr.isTTY || modes().human) console.error(message) }
+async function write(stream: 'stdout' | 'stderr', text: string) {
+    await new Promise<void>(resolve => process[stream].write(text, () => resolve()))
+}
+async function output(value: unknown, event = false) {
+    const options = modes()
+    if (options.human) {
+        const text = value && typeof value === 'object' && 'runners' in value && 'hosts' in value ? table(value as Snapshot) : humanText(value)
+        await write('stdout', text.trimEnd() + '\n'); return
+    }
+    await write('stdout', formatJson(value, { stream: 'stdout', nopretty: event || options.nopretty }))
 }
 export function table(data: Snapshot) {
     const columns = [['RUNNER', 'MACHINE', 'STATE', 'SERVICE', 'TARGET LABELS'], ...data.runners.map(row => [row.selector, row.host ?? 'unmanaged', row.status, row.service?.pid ? `PID ${row.service.pid}` : row.service?.state ?? 'unmanaged', row.labels.filter(label => !['self-hosted', 'macOS', 'Linux', 'ARM64', 'X64'].includes(label)).join(', ')])]
@@ -474,12 +536,19 @@ export const program = new Command().name('woreda').version(pkg.version).descrip
     .option('--json', 'JSON output (the default; overrides --human)')
     .option('--nopretty', 'compact JSON')
     .helpCommand(false)
-    .configureOutput({ outputError: (text, write) => { write(process.argv.includes('--human') ? text : JSON.stringify({ error: { code: 'usage', message: text.trim() } }) + '\n') } })
-    .configureHelp({ showGlobalOptions: true, formatHelp: (command) => JSON.stringify({ name: command.name(), description: command.description(), usage: [command.name(), command.usage()].join(' '), options: command.options.map(option => ({ flags: option.flags, description: option.description, default: option.defaultValue })), commands: command.commands.map(child => ({ name: child.name(), description: child.description(), arguments: child.registeredArguments.map(argument => ({ name: argument.name(), required: argument.required })) })) }, null, 2) })
+    .configureOutput({ outputError: (text, write) => { const options = modes(); write(options.human ? text : formatJson({ error: { code: 'usage', message: text.trim() } }, { stream: 'stderr', nopretty: options.nopretty })) } })
+    .configureHelp({ showGlobalOptions: true, formatHelp: (command, helper) => {
+        const options = modes()
+        if (options.human) return new Help().formatHelp(command, helper)
+        return formatJson({ name: command.name(), description: command.description(), usage: [command.name(), command.usage()].join(' '), options: command.options.map(option => ({ flags: option.flags, description: option.description, default: option.defaultValue })), commands: command.commands.map(child => ({ name: child.name(), description: child.description(), arguments: child.registeredArguments.map(argument => ({ name: argument.name(), required: argument.required })) })) }, { stream: 'stdout', always: true, nopretty: options.nopretty })
+    } })
+    .addHelpText('beforeAll', () => process.stdout.isTTY && !modes().nopretty && !modes().json ? '\n' + logo() + '\n' : '')
+    .action(() => program.help())
+
 function action<A extends unknown[]>(run: (...args: A) => Promise<unknown>) {
     return async (...args: A) => {
-        try { const value = await run(...args); if (value !== undefined) output(value) }
-        catch (error) { const message = redact(error instanceof Error ? error.message : String(error)); console.error(program.opts<Globals>().human && !program.opts<Globals>().json ? message : JSON.stringify({ error: { code: 'operation_failed', message } })); process.exitCode = 1 }
+        try { const value = await run(...args); if (value !== undefined) await output(value) }
+        catch (error) { const message = redact(error instanceof Error ? error.message : String(error)); const options = modes(); await write('stderr', options.human ? message + '\n' : formatJson({ error: { code: 'operation_failed', message } }, { stream: 'stderr', nopretty: options.nopretty })); process.exitCode = 1 }
     }
 }
 function addOptions(command: Command) {
@@ -513,7 +582,7 @@ program.command('doctor').description('check runner health; nonzero exit if mana
 program.command('watch').description('live terminal dashboard').option('--interval <seconds>', 'refresh interval', integer('Interval', 2, 3600), 15).option('--once', 'one dashboard snapshot').action(action(async (options: { interval: number; once?: boolean }) => {
     do {
         const data = await snapshot(await loadSettings())
-        if (process.stdout.isTTY) { process.stdout.write('\x1b[2J\x1b[H'); console.log(`Woreda · ${new Date().toLocaleString()}\n${table(data)}`) } else output(data)
+        if (process.stdout.isTTY && !modes().json && !modes().nopretty) { process.stdout.write('\x1b[2J\x1b[H'); console.log(`${logo()}\n\nWoreda v${pkg.version} · ${new Date().toLocaleString()}\n${table(data)}`) } else await output(data, true)
         if (options.once) break
         await Bun.sleep(options.interval * 1000)
     } while (true)
